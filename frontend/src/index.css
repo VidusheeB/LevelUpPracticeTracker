@@ -1,0 +1,186 @@
+/**
+ * =============================================================================
+ * INDEX.CSS - Global Styles & Tailwind Imports
+ * =============================================================================
+ * This file imports Tailwind's utility classes and defines global styles.
+ *
+ * STRUCTURE:
+ * 1. Tailwind directives (base, components, utilities)
+ * 2. Custom base styles (body defaults)
+ * 3. Custom component classes (buttons, cards)
+ * 4. Utility additions (progress bar animations)
+ *
+ * NOTE: Most styling should be done with Tailwind classes directly in JSX.
+ * This file is for global defaults and complex animations only.
+ * =============================================================================
+ */
+
+/* Tailwind base styles - resets and defaults */
+@tailwind base;
+/* Tailwind component classes */
+@tailwind components;
+/* Tailwind utility classes */
+@tailwind utilities;
+
+
+/* =============================================================================
+   BASE STYLES
+   Global defaults applied to all pages
+   ============================================================================= */
+
+@layer base {
+  /* Default body styling */
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    /* Prevent pull-to-refresh on mobile for app-like feel */
+    overscroll-behavior: none;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Remove default focus outlines, add accessible alternative */
+  *:focus {
+    @apply outline-none ring-2 ring-primary ring-offset-2;
+  }
+
+  /* Button reset - removes default browser styling */
+  button {
+    @apply font-medium;
+  }
+}
+
+
+/* =============================================================================
+   COMPONENT CLASSES
+   Reusable component styles (prefer Tailwind classes in JSX when possible)
+   ============================================================================= */
+
+@layer components {
+  /* Primary button - main call-to-action style */
+  .btn-primary {
+    @apply px-6 py-3 bg-primary text-white rounded-xl font-semibold
+           shadow-button hover:bg-primary-dark active:scale-95
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary button - outlined style */
+  .btn-secondary {
+    @apply px-6 py-3 bg-white text-primary border-2 border-primary rounded-xl
+           font-semibold hover:bg-primary hover:text-white
+           transition-all duration-200;
+  }
+
+  /* Ghost button - minimal style for less important actions */
+  .btn-ghost {
+    @apply px-4 py-2 text-gray-600 hover:text-primary hover:bg-gray-100
+           rounded-lg transition-all duration-200;
+  }
+
+  /* Card container - used for task cards, stat tiles, etc. */
+  .card {
+    @apply bg-white rounded-2xl shadow-card p-4
+           hover:shadow-card-hover transition-shadow duration-200;
+  }
+
+  /* Input field styling */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200
+           focus:border-primary focus:ring-2 focus:ring-primary/20
+           transition-all duration-200 bg-white;
+  }
+
+  /* Badge/chip styling */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  /* Navigation tab style */
+  .nav-tab {
+    @apply flex flex-col items-center gap-1 py-2 px-4 text-gray-400
+           hover:text-primary transition-colors;
+  }
+
+  .nav-tab-active {
+    @apply text-primary;
+  }
+}
+
+
+/* =============================================================================
+   UTILITY ADDITIONS
+   Custom utilities for animations and special effects
+   ============================================================================= */
+
+@layer utilities {
+  /* Progress bar animation - smooth fill */
+  .progress-bar {
+    @apply relative overflow-hidden;
+  }
+
+  .progress-bar::after {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent;
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Streak fire glow effect */
+  .streak-glow {
+    text-shadow: 0 0 10px #f97316, 0 0 20px #f97316, 0 0 30px #f97316;
+  }
+
+  /* Level up celebration animation */
+  .level-up {
+    animation: levelUp 0.5s ease-out;
+  }
+
+  @keyframes levelUp {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  /* Readiness bar colors based on percentage */
+  .readiness-low {
+    @apply bg-danger;
+  }
+
+  .readiness-medium {
+    @apply bg-warning;
+  }
+
+  .readiness-high {
+    @apply bg-success;
+  }
+
+  /* Timer display styling */
+  .timer-display {
+    @apply font-mono text-6xl font-bold tracking-wider;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Safe area padding for mobile notches */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

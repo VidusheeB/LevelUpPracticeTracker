@@ -1,0 +1,21 @@
+# =============================================================================
+# PRACTICEBEATS BACKEND DEPENDENCIES
+# =============================================================================
+# Install with: pip install -r requirements.txt
+#
+# CORE FRAMEWORK
+# FastAPI: Modern, fast web framework for building APIs
+# Uvicorn: ASGI server to run FastAPI
+#
+# DATABASE
+# SQLAlchemy: ORM for database operations
+# Pydantic: Data validation (comes with FastAPI)
+#
+# Note: SQLite is built into Python, no extra package needed
+# =============================================================================
+
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+sqlalchemy>=2.0.0
+pydantic[email]>=2.5.0
+python-multipart>=0.0.6

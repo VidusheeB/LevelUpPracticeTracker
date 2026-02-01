@@ -1,0 +1,127 @@
+
+╔═══════════════════════════════════════════════════════════════╗
+║          🎵 Starting PracticeBeats Application 🎵            ║
+╚═══════════════════════════════════════════════════════════════╝
+
+Cleaning up old processes...
+📡 Starting backend server...
+INFO:     Will watch for changes in these directories: ['/Users/vidushee/Documents/GitHub/LevelUpCode/LevelUpPracticeTracker/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [15098] using WatchFiles
+INFO:     Started server process [15130]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+🎨 Starting frontend server...
+
+> practice-beats@1.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 229 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+🌐 Opening browser...
+
+============================================
+  ✓ PracticeBeats is running!
+  🌐 Frontend: http://localhost:5173
+  📡 Backend:  http://localhost:8000
+  📚 API Docs: http://localhost:8000/docs
+
+  Press Ctrl+C to stop both servers
+============================================
+
+============================================================
+  PracticeBeats API Started!
+  Visit http://localhost:8000/docs for API documentation
+============================================================
+INFO:     127.0.0.1:56779 - "GET /api/users/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56834 - "PATCH /api/users/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56846 - "GET /api/users/1 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/users/8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/users/8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/users/8/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/users/8/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/tasks?user_id=8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/tasks?user_id=8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/ensembles/2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/ensembles/2 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/rehearsals?ensemble_id=2&upcoming=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/rehearsals?ensemble_id=2&upcoming=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/challenges?ensemble_id=2&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/challenges?ensemble_id=2&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "OPTIONS /api/ensembles/2/leaderboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "GET /api/ensembles/2/leaderboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57298 - "PATCH /api/users/8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57302 - "PATCH /api/users/8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57363 - "OPTIONS /api/teachers/8/students HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57363 - "GET /api/teachers/8/students HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57363 - "OPTIONS /api/sessions?user_id=8&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57363 - "GET /api/sessions?user_id=8&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57363 - "OPTIONS /api/events?user_id=8 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57363 - "GET /api/events?user_id=8 HTTP/1.1" 200 OK
+10:20:35 PM [vite] hmr update /src/components/Dashboard.jsx, /src/index.css
+10:20:41 PM [vite] hmr update /src/components/Dashboard.jsx, /src/index.css
+INFO:     127.0.0.1:57397 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57397 - "OPTIONS /api/users/7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57397 - "GET /api/users/7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57397 - "OPTIONS /api/users/7/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57397 - "GET /api/users/7/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57397 - "OPTIONS /api/tasks?user_id=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57397 - "GET /api/tasks?user_id=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57405 - "OPTIONS /api/sessions?user_id=7&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57405 - "GET /api/sessions?user_id=7&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57405 - "OPTIONS /api/events?user_id=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57405 - "GET /api/events?user_id=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57405 - "GET /api/sessions?user_id=7&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57405 - "GET /api/events?user_id=7 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "OPTIONS /api/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "POST /api/auth/register HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "OPTIONS /api/users/10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "GET /api/users/10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "OPTIONS /api/users/10/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "GET /api/users/10/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "OPTIONS /api/tasks?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57435 - "GET /api/tasks?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57458 - "PATCH /api/users/10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57458 - "OPTIONS /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57458 - "POST /api/tasks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57471 - "PATCH /api/users/10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57471 - "OPTIONS /api/sessions?user_id=10&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57471 - "GET /api/sessions?user_id=10&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57471 - "OPTIONS /api/events?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57471 - "GET /api/events?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57475 - "OPTIONS /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57475 - "POST /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57475 - "OPTIONS /api/ensembles HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57475 - "POST /api/ensembles HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57475 - "OPTIONS /api/ensembles/3/join?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57475 - "POST /api/ensembles/3/join?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57489 - "POST /api/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57489 - "GET /api/users/10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57489 - "GET /api/users/10/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57489 - "GET /api/sessions?user_id=10&limit=50&start_date=2026-01-26&end_date=2026-02-01 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57489 - "GET /api/tasks?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "GET /api/events?user_id=10 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "OPTIONS /api/ensembles/3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "GET /api/ensembles/3 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "OPTIONS /api/rehearsals?ensemble_id=3&upcoming=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "GET /api/rehearsals?ensemble_id=3&upcoming=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "OPTIONS /api/challenges?ensemble_id=3&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "GET /api/challenges?ensemble_id=3&status=active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "OPTIONS /api/ensembles/3/leaderboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57491 - "GET /api/ensembles/3/leaderboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57507 - "OPTIONS /api/rehearsals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57507 - "POST /api/rehearsals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57507 - "GET /api/rehearsals?ensemble_id=3&upcoming=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57509 - "POST /api/rehearsals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57509 - "GET /api/rehearsals?ensemble_id=3&upcoming=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57511 - "POST /api/rehearsals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57511 - "GET /api/rehearsals?ensemble_id=3&upcoming=true HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57521 - "POST /api/events HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57527 - "POST /api/rehearsals HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57527 - "GET /api/rehearsals?ensemble_id=3&upcoming=true HTTP/1.1" 200 OK
+10:25:15 PM [vite] hmr update /src/components/Dashboard.jsx, /src/index.css
