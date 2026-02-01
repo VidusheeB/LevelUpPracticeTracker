@@ -63,6 +63,7 @@ class CalendarEventType(str, Enum):
     PRACTICE_REMINDER = "practice_reminder"
     LESSON = "lesson"
     PERFORMANCE = "performance"
+    REHEARSAL = "rehearsal"
     OTHER = "other"
 
 

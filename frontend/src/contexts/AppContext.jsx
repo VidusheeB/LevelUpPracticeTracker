@@ -60,18 +60,17 @@ export function AppProvider({ children }) {
 
 
   // ===========================================================================
-  // AUTO-LOAD FROM LOCAL STORAGE - DISABLED FOR TESTING
+  // AUTO-LOAD FROM LOCAL STORAGE
   // ===========================================================================
-  // Removed to require login on each page load for demo purposes
-  // Enable this to restore "remember me" functionality:
-  // useEffect(() => {
-  //   const savedUserId = localStorage.getItem('practicebeats_user_id')
-  //   if (savedUserId) {
-  //     loadUserData(parseInt(savedUserId)).catch(() => {
-  //       localStorage.removeItem('practicebeats_user_id')
-  //     })
-  //   }
-  // }, [loadUserData])
+  // Restore user session on page reload
+  useEffect(() => {
+    const savedUserId = localStorage.getItem('practicebeats_user_id')
+    if (savedUserId) {
+      loadUserData(parseInt(savedUserId)).catch(() => {
+        localStorage.removeItem('practicebeats_user_id')
+      })
+    }
+  }, [loadUserData])
 
   // ===========================================================================
   // DATA LOADING FUNCTIONS
