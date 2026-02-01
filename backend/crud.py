@@ -653,18 +653,23 @@ def get_rehearsal(db: Session, rehearsal_id: int) -> Optional[models.Rehearsal]:
 def get_ensemble_rehearsals(
     db: Session,
     ensemble_id: int,
-    upcoming_only: bool = False
+    upcoming_only: bool = False,
+    limit: Optional[int] = None
 ) -> List[models.Rehearsal]:
     """
     Get rehearsals for an ensemble.
-    If upcoming_only=True, only returns future rehearsals.
+    If upcoming_only=True, only returns future rehearsals (soonest first).
+    If limit is set, returns at most that many (e.g., 3 most recent upcoming).
     """
     query = db.query(models.Rehearsal).filter(models.Rehearsal.ensemble_id == ensemble_id)
 
     if upcoming_only:
         query = query.filter(models.Rehearsal.date >= datetime.now())
 
-    return query.order_by(models.Rehearsal.date).all()
+    query = query.order_by(models.Rehearsal.date)
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 def update_rehearsal(
@@ -1053,6 +1058,16 @@ def get_student_summary(db: Session, student_id: int) -> Optional[schemas.Studen
     if not student:
         return None
 
+    # If student hasn't opted to share practice, return zeros for practice-derived stats
+    if not student.share_practice_with_teacher:
+        return schemas.StudentSummary(
+            user=student,
+            weekly_minutes=0,
+            streak_count=0,
+            total_sessions_this_week=0,
+            last_practice_date=None
+        )
+
     weekly_minutes = get_user_weekly_minutes(db, student_id)
 
     # Count sessions this week
@@ -1079,7 +1094,13 @@ def get_student_activity_log(
     student_id: int,
     limit: int = 20
 ) -> List[models.PracticeSession]:
-    """Get recent practice sessions for a student (shared activity log)."""
+    """
+    Get recent practice sessions for a student.
+    Only returns data if the student has opted in to share (share_practice_with_teacher=True).
+    """
+    student = get_user(db, student_id)
+    if not student or not student.share_practice_with_teacher:
+        return []
     return db.query(models.PracticeSession).filter(
         models.PracticeSession.user_id == student_id
     ).order_by(models.PracticeSession.start_time.desc()).limit(limit).all()

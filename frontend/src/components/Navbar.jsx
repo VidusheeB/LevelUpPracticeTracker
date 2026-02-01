@@ -32,9 +32,9 @@ export default function Navbar() {
     { path: '/', label: 'Home', icon: '🏠' },
     { path: '/calendar', label: 'Calendar', icon: '📅' },
     { path: '/practice', label: 'Practice', icon: '▶️', isPrimary: true },
-    isTeacher
-      ? { path: '/students', label: 'Students', icon: '📚' }
-      : { path: '/team', label: 'Team', icon: '👥' },
+    ...(isTeacher
+      ? [{ path: '/students', label: 'Students', icon: '📚' }]
+      : [{ path: '/team', label: 'Messages', icon: '💬' }]),
     { path: '/tasks', label: 'Tasks', icon: '📋' },
   ]
 

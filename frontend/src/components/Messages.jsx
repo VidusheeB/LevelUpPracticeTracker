@@ -18,53 +18,53 @@ import { api } from '../utils/api'
 
 
 export default function Messages() {
-  const { user, setToast, loadUserData } = useApp()
+  const { user, setToast } = useApp()
+  const [teacher, setTeacher] = useState(null)
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
 
-  // Load messages on mount
+  // Load teacher and messages on mount
   useEffect(() => {
-    loadMessages()
-  }, [])
+    if (!user?.teacher_id) return
+    const load = async () => {
+      setLoading(true)
+      try {
+        const [teacherData, notesData] = await Promise.all([
+          api.getUser(user.teacher_id),
+          api.getNotes(user.id, user.teacher_id)
+        ])
+        setTeacher(teacherData)
+        setMessages(notesData.reverse())
+      } catch (error) {
+        console.error('Failed to load messages:', error)
+        setToast('Failed to load messages', 'error')
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [user?.id, user?.teacher_id])
 
-  // Load all notes/messages for this user
+  // Reload messages (called after sending)
   const loadMessages = async () => {
-    setLoading(true)
+    if (!user?.teacher_id) return
     try {
-      const data = await api.getNotes(user.id)
-      setMessages(data)
+      const data = await api.getNotes(user.id, user.teacher_id)
+      setMessages(data.reverse())
     } catch (error) {
-      console.error('Failed to load messages:', error)
       setToast('Failed to load messages', 'error')
-    } finally {
-      setLoading(false)
     }
   }
 
   // Send a reply to teacher
   const handleSendReply = async () => {
-    if (!replyText.trim()) return
+    if (!replyText.trim() || !user?.teacher_id) return
 
     setSending(true)
     try {
-      // Find the teacher (the user who has teacher_id set to null or is the instructor)
-      const teacher = user.teacher_id ? { id: user.teacher_id } : null
-      
-      if (!teacher) {
-        setToast('You are not linked to a teacher', 'error')
-        setSending(false)
-        return
-      }
-
-      // Send note to teacher
-      await api.sendNote({
-        sender_id: user.id,
-        recipient_id: teacher.id,
-        message: replyText
-      })
-
+      await api.sendNote(user.id, user.teacher_id, replyText.trim())
       setToast('Message sent! ✉️', 'success')
       setReplyText('')
       await loadMessages()
@@ -110,7 +110,9 @@ export default function Messages() {
           <span className="text-xl">👨‍🏫</span>
         </div>
         <div>
-          <h2 className="font-semibold text-gray-900">Your Teacher</h2>
+          <h2 className="font-semibold text-gray-900">
+            {teacher?.name || 'Your Teacher'}
+          </h2>
           <p className="text-xs text-gray-500">Messages</p>
         </div>
       </div>
@@ -140,7 +142,7 @@ export default function Messages() {
                     : 'bg-gray-100 text-gray-900 rounded-bl-sm'
                 }`}
               >
-                <p className="text-sm break-words">{msg.message}</p>
+                <p className="text-sm break-words">{msg.content}</p>
                 <p
                   className={`text-xs mt-2 ${
                     msg.sender_id === user.id ? 'text-primary/70' : 'text-gray-500'

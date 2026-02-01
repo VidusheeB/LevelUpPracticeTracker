@@ -135,6 +135,7 @@ class UserUpdate(BaseModel):
     weekly_goal_minutes: Optional[int] = None
     role: Optional[UserRole] = None
     teacher_code_to_join: Optional[str] = None  # To link to a teacher
+    share_practice_with_teacher: Optional[bool] = None  # Student opt-in to share practice log
 
 
 class User(UserBase):
@@ -147,6 +148,7 @@ class User(UserBase):
     ensemble_id: Optional[int] = None
     teacher_code: Optional[str] = None  # Only for teachers
     teacher_id: Optional[int] = None  # Only for students
+    share_practice_with_teacher: bool = False  # Student opt-in to share practice log
     weekly_goal_minutes: int
     streak_count: int
     total_points: int

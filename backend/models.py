@@ -155,6 +155,7 @@ class User(Base):
     # Teacher-Student linking
     teacher_code = Column(String(6), unique=True, nullable=True)  # 6-digit code for teachers
     teacher_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Students link to teacher
+    share_practice_with_teacher = Column(Boolean, default=False)  # Student opt-in to share practice log
 
     # Ensemble membership (optional - solo users can exist)
     ensemble_id = Column(Integer, ForeignKey("ensembles.id"), nullable=True)

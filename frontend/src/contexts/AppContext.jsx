@@ -96,23 +96,7 @@ export function AppProvider({ children }) {
       const tasksData = await api.getTasks(userId)
       setTasks(tasksData)
 
-      // If user has an ensemble, fetch ensemble data
-      if (userData.ensemble_id) {
-        const ensembleData = await api.getEnsemble(userData.ensemble_id)
-        setEnsemble(ensembleData)
-
-        // Fetch upcoming rehearsals
-        const rehearsalsData = await api.getRehearsals(userData.ensemble_id, true)
-        setRehearsals(rehearsalsData)
-
-        // Fetch active challenges
-        const challengesData = await api.getChallenges(userData.ensemble_id, 'active')
-        setChallenges(challengesData)
-
-        // Fetch leaderboard
-        const leaderboardData = await api.getLeaderboard(userData.ensemble_id)
-        setLeaderboard(leaderboardData)
-      }
+      // Ensemble features removed - skip ensemble/rehearsal/challenge loading
 
     } catch (error) {
       console.error('Failed to load user data:', error)
@@ -383,6 +367,7 @@ export function AppProvider({ children }) {
     login,
     register,
     logout,
+    loadUserData,
 
     // Refresh Actions
     refreshStats,

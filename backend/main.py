@@ -33,6 +33,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import List, Optional
 from datetime import date
 
@@ -49,6 +50,15 @@ from database import engine, get_db
 async def lifespan(app: FastAPI):
     # Startup
     models.Base.metadata.create_all(bind=engine)
+    # Migration: add share_practice_with_teacher column if it doesn't exist
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(
+                "ALTER TABLE users ADD COLUMN share_practice_with_teacher INTEGER DEFAULT 0"
+            ))
+            conn.commit()
+    except Exception:
+        pass  # Column likely already exists
     print("=" * 60)
     print("  PracticeBeats API Started!")
     print("  Visit http://localhost:8000/docs for API documentation")
@@ -391,14 +401,16 @@ def create_rehearsal(rehearsal: schemas.RehearsalCreate, db: Session = Depends(g
 def get_rehearsals(
     ensemble_id: int,
     upcoming: bool = False,
+    limit: Optional[int] = 3,
     db: Session = Depends(get_db)
 ):
     """
     Get rehearsals for an ensemble.
 
     Set upcoming=true to only get future rehearsals.
+    limit=3 returns only the 3 soonest upcoming rehearsals (default).
     """
-    return crud.get_ensemble_rehearsals(db, ensemble_id, upcoming)
+    return crud.get_ensemble_rehearsals(db, ensemble_id, upcoming, limit if upcoming else None)
 
 
 @app.get("/api/rehearsals/{rehearsal_id}", response_model=schemas.Rehearsal)

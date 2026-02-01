@@ -28,21 +28,7 @@ import TaskCard from './TaskCard'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const {
-    user,
-    stats,
-    tasks,
-    rehearsals,
-    challenges,
-    logout,
-    setToast,
-    loadUserData
-  } = useApp()
-
-  // State for joining ensemble
-  const [showJoinEnsemble, setShowJoinEnsemble] = useState(false)
-  const [ensembleCode, setEnsembleCode] = useState('')
-  const [joiningEnsemble, setJoiningEnsemble] = useState(false)
+  const { user, stats, tasks, logout, setToast, loadUserData } = useApp()
 
   // State for editing weekly goal
   const [showGoalEditor, setShowGoalEditor] = useState(false)
@@ -77,45 +63,12 @@ export default function Dashboard() {
     }
   }
 
-  // Handle joining ensemble by code
-  const handleJoinEnsemble = async () => {
-    if (!ensembleCode.trim()) {
-      setToast('Please enter an ensemble code', 'error')
-      return
-    }
-
-    setJoiningEnsemble(true)
-    try {
-      await api.joinEnsembleByCode(ensembleCode.trim(), user.id)
-      setToast('Joined ensemble! 🎉', 'success')
-      setShowJoinEnsemble(false)
-      setEnsembleCode('')
-      // Reload user data to reflect ensemble membership
-      await loadUserData(user.id)
-    } catch (error) {
-      setToast(error.message || 'Failed to join ensemble', 'error')
-    } finally {
-      setJoiningEnsemble(false)
-    }
-  }
-
   // ---------------------------------------------------------------------------
   // DERIVED DATA
   // ---------------------------------------------------------------------------
 
   // Get tasks that need attention (not ready status)
   const activeTasks = tasks.filter(t => t.status !== 'ready').slice(0, 4)
-
-  // Get next rehearsal
-  const nextRehearsal = rehearsals.length > 0 ? rehearsals[0] : null
-
-  // Get active challenge
-  const activeChallenge = challenges.length > 0 ? challenges[0] : null
-
-  // Calculate days until next rehearsal
-  const daysUntilRehearsal = nextRehearsal
-    ? Math.ceil((new Date(nextRehearsal.date) - new Date()) / (1000 * 60 * 60 * 24))
-    : null
 
 
   // ---------------------------------------------------------------------------
@@ -154,67 +107,6 @@ export default function Dashboard() {
         </button>
       </header>
 
-
-      {/* =================================================================
-          JOIN ENSEMBLE SECTION (Personal users only)
-          Allow users to join an ensemble with a code
-          ================================================================= */}
-      {user.role === 'personal' && !user.ensemble_id && (
-        <div className="card bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">👥</span>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">Join an Ensemble</h3>
-              <p className="text-sm text-gray-600">Connect with other musicians</p>
-            </div>
-            <button
-              onClick={() => setShowJoinEnsemble(true)}
-              className="btn-primary text-sm px-4"
-            >
-              Join
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Modal for joining ensemble */}
-      {showJoinEnsemble && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6">
-            <h3 className="text-xl font-bold mb-4">Enter Ensemble Code</h3>
-            <p className="text-gray-600 text-sm mb-4">
-              Ask your ensemble coordinator for the 8-digit code
-            </p>
-            <input
-              type="text"
-              value={ensembleCode}
-              onChange={(e) => setEnsembleCode(e.target.value.toUpperCase())}
-              placeholder="12345678"
-              maxLength={8}
-              className="input text-center text-2xl tracking-widest mb-4"
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setShowJoinEnsemble(false)
-                  setEnsembleCode('')
-                }}
-                className="flex-1 btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleJoinEnsemble}
-                disabled={joiningEnsemble || !ensembleCode.trim()}
-                className="flex-1 btn-primary"
-              >
-                {joiningEnsemble ? 'Joining...' : 'Join'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Modal for editing weekly goal */}
       {showGoalEditor && (
@@ -372,36 +264,6 @@ export default function Dashboard() {
 
 
       {/* =================================================================
-          UPCOMING REHEARSAL ALERT
-          Shows if there's a rehearsal coming up soon
-          ================================================================= */}
-      {nextRehearsal && daysUntilRehearsal <= 3 && (
-        <div className={`
-          p-4 rounded-2xl flex items-center gap-3
-          ${daysUntilRehearsal <= 1 ? 'bg-danger/10 border border-danger/30' : 'bg-warning/10 border border-warning/30'}
-        `}>
-          <span className="text-2xl">
-            {daysUntilRehearsal <= 1 ? '🚨' : '📢'}
-          </span>
-          <div className="flex-1">
-            <p className={`font-semibold ${daysUntilRehearsal <= 1 ? 'text-danger' : 'text-warning-dark'}`}>
-              Rehearsal {daysUntilRehearsal === 0 ? 'TODAY' : daysUntilRehearsal === 1 ? 'tomorrow' : `in ${daysUntilRehearsal} days`}!
-            </p>
-            <p className="text-sm text-gray-600">
-              {new Date(nextRehearsal.date).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit'
-              })}
-            </p>
-          </div>
-        </div>
-      )}
-
-
-      {/* =================================================================
           TODAY'S PRACTICE TASKS
           Cards showing tasks to work on
           ================================================================= */}
@@ -422,7 +284,7 @@ export default function Dashboard() {
               <TaskCard
                 key={task.id}
                 task={task}
-                rehearsal={task.rehearsal_id ? nextRehearsal : null}
+                rehearsal={null}
               />
             ))}
           </div>
@@ -439,40 +301,6 @@ export default function Dashboard() {
           </div>
         )}
       </section>
-
-
-      {/* =================================================================
-          ACTIVE GROUP CHALLENGE
-          Shows current challenge progress (students only, not teachers)
-          ================================================================= */}
-      {activeChallenge && user?.role !== 'teacher' && (
-        <section className="card bg-gradient-to-r from-primary/5 to-purple-100">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl">🎯</span>
-            <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">Team Challenge</h3>
-              <p className="text-sm text-gray-600 mt-1">{activeChallenge.title}</p>
-
-              {/* Progress indicator */}
-              <div className="mt-3 flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  {/* Show completed member avatars */}
-                  {[...Array(3)].map((_, i) => (
-                    <div
-                      key={i}
-                      className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-sm
-                        ${i < 2 ? 'bg-success text-white' : 'bg-gray-200 text-gray-400'}`}
-                    >
-                      {i < 2 ? '✓' : '?'}
-                    </div>
-                  ))}
-                </div>
-                <span className="text-sm text-gray-500">3/5 completed</span>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
 
       {/* =================================================================

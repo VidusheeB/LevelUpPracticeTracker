@@ -264,9 +264,12 @@ export const api = {
   /**
    * Get rehearsals for an ensemble.
    * Set upcoming=true to only get future rehearsals.
+   * When upcoming=true, limit (default 3) returns only the N soonest rehearsals.
    */
-  async getRehearsals(ensembleId, upcoming = false) {
-    return fetchAPI(`/rehearsals?ensemble_id=${ensembleId}&upcoming=${upcoming}`)
+  async getRehearsals(ensembleId, upcoming = false, limit = 3) {
+    let url = `/rehearsals?ensemble_id=${ensembleId}&upcoming=${upcoming}`
+    if (upcoming && limit) url += `&limit=${limit}`
+    return fetchAPI(url)
   },
 
   /**
@@ -525,6 +528,16 @@ export const api = {
    */
   async getNotesConversation(user1Id, user2Id, limit = 50) {
     return fetchAPI(`/notes/conversation/${user1Id}/${user2Id}?limit=${limit}`)
+  },
+
+  /**
+   * Get all notes for a user (conversation with their teacher).
+   * For students: returns conversation with teacher_id.
+   * Convenience wrapper around getNotesConversation when user has teacher_id.
+   */
+  async getNotes(userId, teacherId) {
+    if (!teacherId) return []
+    return this.getNotesConversation(userId, teacherId)
   },
 
   /**

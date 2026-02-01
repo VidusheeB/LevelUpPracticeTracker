@@ -23,7 +23,7 @@ import TaskCard from './TaskCard'
 
 
 export default function TaskList() {
-  const { tasks, createTask, deleteTask, rehearsals, setToast } = useApp()
+  const { tasks, createTask, deleteTask, setToast } = useApp()
 
 
   // ---------------------------------------------------------------------------
@@ -41,8 +41,7 @@ export default function TaskList() {
     title: '',
     category: 'repertoire',
     difficulty: 3,
-    estimated_minutes: 30,
-    rehearsal_id: ''
+    estimated_minutes: 30
   })
 
 
@@ -94,17 +93,14 @@ export default function TaskList() {
         title: newTask.title,
         category: newTask.category,
         difficulty: newTask.difficulty,
-        estimated_minutes: newTask.estimated_minutes,
-        rehearsal_id: newTask.rehearsal_id || null
+        estimated_minutes: newTask.estimated_minutes
       })
 
-      // Reset form
       setNewTask({
         title: '',
         category: 'repertoire',
         difficulty: 3,
-        estimated_minutes: 30,
-        rehearsal_id: ''
+        estimated_minutes: 30
       })
       setShowCreateForm(false)
     } catch (error) {
@@ -243,31 +239,6 @@ export default function TaskList() {
             </div>
           </div>
 
-          {/* Link to Rehearsal */}
-          {rehearsals.length > 0 && (
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Link to Rehearsal (optional)
-              </label>
-              <select
-                value={newTask.rehearsal_id}
-                onChange={(e) => setNewTask({ ...newTask, rehearsal_id: e.target.value })}
-                className="input"
-              >
-                <option value="">None</option>
-                {rehearsals.map((rehearsal) => (
-                  <option key={rehearsal.id} value={rehearsal.id}>
-                    {new Date(rehearsal.date).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           {/* Actions */}
           <div className="flex gap-2 pt-2">
             <button type="submit" className="btn-primary flex-1">
@@ -294,7 +265,7 @@ export default function TaskList() {
             <div key={task.id} className="relative group">
               <TaskCard
                 task={task}
-                rehearsal={task.rehearsal_id ? rehearsals.find(r => r.id === task.rehearsal_id) : null}
+                rehearsal={null}
               />
 
               {/* Delete button (shows on hover) */}
