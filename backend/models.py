@@ -87,6 +87,7 @@ class CalendarEventType(str, enum.Enum):
     PRACTICE_REMINDER = "practice_reminder"  # Scheduled practice time
     LESSON = "lesson"                        # Music lesson
     PERFORMANCE = "performance"              # Concert, recital, gig
+    REHEARSAL = "rehearsal"                  # Ensemble/group rehearsal
     OTHER = "other"                          # Custom event
 
 
@@ -249,6 +250,9 @@ class PracticeTask(Base):
 
     # Optional link to a rehearsal (for "prepare for Thursday's rehearsal")
     rehearsal_id = Column(Integer, ForeignKey("rehearsals.id"), nullable=True)
+
+    # Teacher assignment tracking
+    assigned_by = Column(Integer, ForeignKey("users.id"), nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

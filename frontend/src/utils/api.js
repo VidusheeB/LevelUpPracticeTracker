@@ -508,6 +508,16 @@ export const api = {
     return fetchAPI(`/teachers/${teacherId}/students/${studentId}/activity?limit=${limit}`)
   },
 
+  /**
+   * Assign a practice task to a student.
+   */
+  async assignTaskToStudent(teacherId, studentId, taskData) {
+    return fetchAPI(`/teachers/${teacherId}/students/${studentId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify(taskData),
+    })
+  },
+
 
   // ===========================================================================
   // TEACHER NOTE API

@@ -180,6 +180,8 @@ export default function Calendar() {
         return { label: 'Lesson', color: 'bg-purple-500', textColor: 'text-purple-600' }
       case 'performance':
         return { label: 'Performance', color: 'bg-warning', textColor: 'text-warning-dark' }
+      case 'rehearsal':
+        return { label: 'Rehearsal', color: 'bg-blue-500', textColor: 'text-blue-600' }
       default:
         return { label: 'Event', color: 'bg-gray-500', textColor: 'text-gray-600' }
     }
@@ -310,6 +312,7 @@ export default function Calendar() {
               <option value="practice_reminder">Practice Reminder</option>
               <option value="lesson">Lesson</option>
               <option value="performance">Performance</option>
+              <option value="rehearsal">Rehearsal</option>
               <option value="other">Other</option>
             </select>
           </div>

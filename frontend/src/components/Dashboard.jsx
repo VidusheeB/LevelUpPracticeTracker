@@ -236,7 +236,10 @@ export default function Dashboard() {
                 {stats.weekly_minutes} / {stats.weekly_goal_minutes || 0} min
               </p>
               <p className="text-xs text-gray-400 mt-1">👆 Click to edit</p>
-              <div className="mt-2 flex items-center gap-4 text-sm">
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate('/achievements') }}
+                className="mt-2 flex items-center gap-4 text-sm hover:bg-gray-100 -mx-2 px-2 py-1 rounded-lg transition"
+              >
                 <span className="flex items-center gap-1">
                   <span className="text-primary">⭐</span>
                   Level {stats.level}
@@ -245,7 +248,8 @@ export default function Dashboard() {
                   <span className="text-warning">💎</span>
                   {stats.total_points} XP
                 </span>
-              </div>
+                <span className="text-gray-400 text-xs">→</span>
+              </button>
             </div>
           </div>
 

@@ -59,6 +59,15 @@ async def lifespan(app: FastAPI):
             conn.commit()
     except Exception:
         pass  # Column likely already exists
+    # Migration: add assigned_by column to practice_tasks
+    try:
+        with engine.connect() as conn:
+            conn.execute(text(
+                "ALTER TABLE practice_tasks ADD COLUMN assigned_by INTEGER"
+            ))
+            conn.commit()
+    except Exception:
+        pass  # Column likely already exists
     print("=" * 60)
     print("  PracticeBeats API Started!")
     print("  Visit http://localhost:8000/docs for API documentation")
@@ -751,6 +760,24 @@ def get_student_activity_log(
         raise HTTPException(status_code=404, detail="Student not found or not linked to this teacher")
 
     return crud.get_student_activity_log(db, student_id, limit)
+
+
+@app.post("/api/teachers/{teacher_id}/students/{student_id}/tasks", response_model=schemas.PracticeTask)
+def assign_task_to_student(
+    teacher_id: int,
+    student_id: int,
+    task: schemas.PracticeTaskBase,
+    db: Session = Depends(get_db)
+):
+    """
+    Assign a practice task to a student.
+    Teacher creates a task that appears in student's task list.
+    """
+    student = crud.get_user(db, student_id)
+    if not student or student.teacher_id != teacher_id:
+        raise HTTPException(status_code=404, detail="Student not found or not linked to this teacher")
+
+    return crud.assign_task_to_student(db, teacher_id, student_id, task)
 
 
 # =============================================================================

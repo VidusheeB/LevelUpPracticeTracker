@@ -250,6 +250,7 @@ class PracticeTask(PracticeTaskBase):
     user_id: int
     ensemble_id: Optional[int] = None
     rehearsal_id: Optional[int] = None
+    assigned_by: Optional[int] = None  # Teacher who assigned this task
     total_time_practiced: int
     practice_count: int
     status: TaskStatus

@@ -1106,6 +1106,27 @@ def get_student_activity_log(
     ).order_by(models.PracticeSession.start_time.desc()).limit(limit).all()
 
 
+def assign_task_to_student(
+    db: Session,
+    teacher_id: int,
+    student_id: int,
+    task: schemas.PracticeTaskBase
+) -> models.PracticeTask:
+    """Assign a practice task to a student from a teacher."""
+    db_task = models.PracticeTask(
+        user_id=student_id,
+        title=task.title,
+        category=task.category,
+        difficulty=task.difficulty,
+        estimated_minutes=task.estimated_minutes,
+        assigned_by=teacher_id
+    )
+    db.add(db_task)
+    db.commit()
+    db.refresh(db_task)
+    return db_task
+
+
 # =============================================================================
 # TEACHER NOTE OPERATIONS
 # =============================================================================

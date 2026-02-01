@@ -31,6 +31,7 @@ import EnsembleDashboard from './components/EnsembleDashboard'
 import TaskList from './components/TaskList'
 import Messages from './components/Messages'
 import TeacherDashboard from './components/TeacherDashboard'
+import Achievements from './components/Achievements'
 import Navbar from './components/Navbar'
 import Login from './components/Login'
 import Toast from './components/Toast'
@@ -100,6 +101,9 @@ export default function App() {
 
           {/* Students - Teacher dashboard for managing students */}
           <Route path="/students" element={<TeacherDashboard />} />
+
+          {/* Achievements - Badges and XP guide */}
+          <Route path="/achievements" element={<Achievements />} />
 
           {/* Catch-all redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />

@@ -125,3 +125,23 @@ INFO:     127.0.0.1:57521 - "POST /api/events HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57527 - "POST /api/rehearsals HTTP/1.1" 200 OK
 INFO:     127.0.0.1:57527 - "GET /api/rehearsals?ensemble_id=3&upcoming=true HTTP/1.1" 200 OK
 10:25:15 PM [vite] hmr update /src/components/Dashboard.jsx, /src/index.css
+INFO:     127.0.0.1:58083 - "OPTIONS /api/teachers/10/students HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58083 - "GET /api/teachers/10/students HTTP/1.1" 200 OK
+11:03:43 PM [vite] hmr update /src/components/Dashboard.jsx, /src/index.css
+11:03:43 PM [vite] hmr update /src/components/EnsembleDashboard.jsx, /src/index.css
+11:03:43 PM [vite] hmr update /src/contexts/AppContext.jsx, /src/index.css, /src/components/EnsembleDashboard.jsx, /src/components/Dashboard.jsx, /src/components/Calendar.jsx, /src/components/Messages.jsx, /src/components/TeacherDashboard.jsx
+11:03:43 PM [vite] hmr update /src/components/Navbar.jsx, /src/index.css
+11:03:43 PM [vite] hmr update /src/components/Calendar.jsx, /src/index.css
+11:03:43 PM [vite] hmr update /src/components/TaskList.jsx, /src/index.css
+11:03:43 PM [vite] hmr update /src/contexts/AppContext.jsx, /src/index.css
+11:03:43 PM [vite] hmr update /src/components/Messages.jsx, /src/index.css
+WARNING:  WatchFiles detected changes in 'models.py', 'schemas.py', 'crud.py', 'main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [15130]
+INFO:     Started server process [45353]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+./start.sh: line 57: 15098 Killed: 9               python -m uvicorn main:app --reload  (wd: ~/Documents/GitHub/LevelUpCode/LevelUpPracticeTracker/backend)
+./start.sh: line 57: 15139 Killed: 9               npm run dev  (wd: ~/Documents/GitHub/LevelUpCode/LevelUpPracticeTracker/frontend)
