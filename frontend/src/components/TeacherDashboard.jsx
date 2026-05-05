@@ -75,7 +75,7 @@ export default function TeacherDashboard() {
       ])
       setStudentSummary(summary)
       setActivityLog(activity)
-      setNotes(conversation.reverse()) // Show oldest first
+      setNotes([...conversation].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
 
       // Mark notes as read
       await api.markAllNotesRead(user.id, student.id)
@@ -180,7 +180,7 @@ export default function TeacherDashboard() {
               >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-xl">
-                    {student.name.charAt(0)}
+                    {student.name?.charAt(0) || '?'}
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{student.name}</p>

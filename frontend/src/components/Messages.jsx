@@ -36,7 +36,7 @@ export default function Messages() {
           api.getNotes(user.id, user.teacher_id)
         ])
         setTeacher(teacherData)
-        setMessages(notesData.reverse())
+        setMessages([...notesData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
       } catch (error) {
         console.error('Failed to load messages:', error)
         setToast('Failed to load messages', 'error')
@@ -52,7 +52,7 @@ export default function Messages() {
     if (!user?.teacher_id) return
     try {
       const data = await api.getNotes(user.id, user.teacher_id)
-      setMessages(data.reverse())
+      setMessages([...data].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
     } catch (error) {
       setToast('Failed to load messages', 'error')
     }

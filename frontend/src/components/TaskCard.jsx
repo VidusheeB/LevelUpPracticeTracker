@@ -21,6 +21,7 @@ import { useNavigate } from 'react-router-dom'
 
 export default function TaskCard({ task, rehearsal, showActions = true }) {
   const navigate = useNavigate()
+  const readiness = readiness ?? 0
 
 
   // ---------------------------------------------------------------------------
@@ -53,8 +54,9 @@ export default function TaskCard({ task, rehearsal, showActions = true }) {
   // ---------------------------------------------------------------------------
   // DAYS UNTIL REHEARSAL
   // ---------------------------------------------------------------------------
-  const daysUntil = rehearsal
-    ? Math.ceil((new Date(rehearsal.date) - new Date()) / (1000 * 60 * 60 * 24))
+  const rehearsalDate = rehearsal?.date ? new Date(rehearsal.date) : null
+  const daysUntil = (rehearsalDate && !isNaN(rehearsalDate.getTime()))
+    ? Math.ceil((rehearsalDate - new Date()) / (1000 * 60 * 60 * 24))
     : null
 
 
@@ -82,19 +84,19 @@ export default function TaskCard({ task, rehearsal, showActions = true }) {
           <div className="mt-2">
             <div className="flex items-center justify-between text-sm mb-1">
               <span className="text-gray-500">
-                {Math.round(task.readiness_score)}% ready
+                {Math.round(readiness)}% ready
               </span>
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full
-                ${task.readiness_score >= 80 ? 'bg-success/10 text-success' :
-                  task.readiness_score >= 50 ? 'bg-warning/10 text-warning-dark' :
+                ${readiness >= 80 ? 'bg-success/10 text-success' :
+                  readiness >= 50 ? 'bg-warning/10 text-warning-dark' :
                   'bg-danger/10 text-danger'}`}>
-                {getReadinessText(task.readiness_score)}
+                {getReadinessText(readiness)}
               </span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className={`h-full ${getReadinessColor(task.readiness_score)} transition-all duration-500`}
-                style={{ width: `${Math.min(task.readiness_score, 100)}%` }}
+                className={`h-full ${getReadinessColor(readiness)} transition-all duration-500`}
+                style={{ width: `${Math.min(readiness, 100)}%` }}
               />
             </div>
           </div>

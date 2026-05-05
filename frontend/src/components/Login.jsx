@@ -44,6 +44,16 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+
+    if (isRegistering && !name.trim()) {
+      setError('Please enter your name')
+      return
+    }
+    if (!email.trim()) {
+      setError('Please enter your email')
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -65,6 +75,7 @@ export default function Login() {
 
   // Quick login with demo account
   const handleDemoLogin = async (demoEmail) => {
+    if (loading) return
     setEmail(demoEmail)
     setError('')
     setLoading(true)

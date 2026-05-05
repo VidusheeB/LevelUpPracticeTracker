@@ -26,7 +26,7 @@
  * =============================================================================
  */
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '../utils/api'
 
 
@@ -57,6 +57,7 @@ export function AppProvider({ children }) {
   // UI State
   const [loading, setLoading] = useState(false)
   const [toast, setToastState] = useState(null) // { message, type }
+  const toastTimerRef = useRef(null)
 
 
   // ===========================================================================
@@ -253,8 +254,12 @@ export function AppProvider({ children }) {
    * Auto-hides after 3 seconds.
    */
   const setToast = useCallback((message, type = 'info') => {
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToastState({ message, type })
-    setTimeout(() => setToastState(null), 3000)
+    toastTimerRef.current = setTimeout(() => {
+      setToastState(null)
+      toastTimerRef.current = null
+    }, 3000)
   }, [])
 
 
@@ -262,6 +267,10 @@ export function AppProvider({ children }) {
    * Clear toast manually.
    */
   const clearToast = useCallback(() => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = null
+    }
     setToastState(null)
   }, [])
 
