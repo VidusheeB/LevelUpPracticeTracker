@@ -3,8 +3,8 @@ import { useState, useCallback } from 'react'
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native'
 import { useApp } from '../contexts/AppContext'
 import { db } from '../utils/supabase'
-import { getCoachingTip } from '../utils/ai'
-import { scheduleTaskDueReminder } from '../utils/notifications'
+import { getCoachingTip, getSmartReminderData } from '../utils/ai'
+import { scheduleSmartReminder, cancelTaskReminder } from '../utils/notifications'
 
 const CATEGORY_ICONS = {
   repertoire: '🎵',
@@ -40,14 +40,38 @@ export default function TaskDetail() {
     setSavingNote(true)
     try {
       const note = await db.addTaskNote(task.id, user.id, newNote.trim())
-      setNotes(prev => [note, ...prev])
+      const updatedNotes = [note, ...notes]
+      setNotes(updatedNotes)
       setNewNote('')
-      // invalidate tip so it refreshes next time
-      setTip(null)
+      setTip(null) // invalidate so next "Get Tip" is fresh
+
+      // Fire-and-forget: ask Claude for the best reminder time + message,
+      // then reschedule the notification silently in the background
+      rescheduleSmartReminder(updatedNotes)
     } catch (err) {
       setToast(err.message, 'error')
     } finally {
       setSavingNote(false)
+    }
+  }
+
+  const rescheduleSmartReminder = async (currentNotes) => {
+    try {
+      // Fetch recent sessions so Claude can see when this user typically practices
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      const sessions = await db.getSessions(user.id, thirtyDaysAgo.toISOString().split('T')[0])
+      const sessionTimes = sessions.slice(0, 10).map(s =>
+        new Date(s.start_time).toLocaleDateString('en-US', {
+          weekday: 'short', month: 'short', day: 'numeric',
+          hour: 'numeric', minute: '2-digit',
+        })
+      )
+
+      const { remind_at, message } = await getSmartReminderData(task, currentNotes, sessionTimes)
+      await scheduleSmartReminder(task.id, message, remind_at)
+    } catch {
+      // Silent — notifications are best-effort, don't interrupt the user
     }
   }
 

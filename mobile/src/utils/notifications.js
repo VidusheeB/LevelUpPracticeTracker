@@ -78,6 +78,31 @@ export async function cancelTaskReminder(taskId) {
   } catch {}
 }
 
+// Schedule an AI-written notification at a Claude-chosen time.
+// Cancels any existing reminder for this task first so there's no duplicate.
+export async function scheduleSmartReminder(taskId, message, remindAtStr) {
+  try {
+    const granted = await requestNotificationPermissions()
+    if (!granted) return
+
+    const remindAt = new Date(remindAtStr)
+    if (isNaN(remindAt.getTime()) || remindAt <= new Date()) return
+
+    // Cancel the old generic reminder before setting the smart one
+    await cancelTaskReminder(taskId)
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: `task-${taskId}`,
+      content: {
+        title: 'PracticeBeats 🎵',
+        body: message,
+        sound: 'default',
+      },
+      trigger: { date: remindAt, channelId: 'practicebeats' },
+    })
+  } catch {}
+}
+
 // Idempotent: cancel existing, reschedule all upcoming
 export async function scheduleAllReminders(events = [], tasks = []) {
   const granted = await requestNotificationPermissions()
