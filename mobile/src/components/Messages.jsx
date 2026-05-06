@@ -1,7 +1,7 @@
 import { View, Text, FlatList, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native'
 import { useState, useEffect } from 'react'
 import { useApp } from '../contexts/AppContext'
-import { api } from '../utils/api'
+import { db } from '../utils/supabase'
 
 export default function Messages() {
   const { user, setToast } = useApp()
@@ -19,8 +19,8 @@ export default function Messages() {
     const load = async () => {
       try {
         const [teacherData, notesData] = await Promise.all([
-          api.getUser(user.teacher_id),
-          api.getNotes(user.id, user.teacher_id),
+          db.getProfile(user.teacher_id),
+          db.getNotes(user.id, user.teacher_id),
         ])
         setTeacher(teacherData)
         setMessages(sortMessages(notesData))
@@ -36,7 +36,7 @@ export default function Messages() {
   const loadMessages = async () => {
     if (!user?.teacher_id) return
     try {
-      const data = await api.getNotes(user.id, user.teacher_id)
+      const data = await db.getNotes(user.id, user.teacher_id)
       setMessages(sortMessages(data))
     } catch {
       setToast('Failed to refresh messages', 'error')
@@ -47,7 +47,7 @@ export default function Messages() {
     if (!replyText.trim() || !user?.teacher_id) return
     setSending(true)
     try {
-      await api.sendNote(user.id, user.teacher_id, replyText.trim())
+      await db.sendNote(user.id, user.teacher_id, replyText.trim())
       setReplyText('')
       await loadMessages()
     } catch {

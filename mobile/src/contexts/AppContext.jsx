@@ -1,45 +1,46 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { api } from '../utils/api'
+import { auth, db } from '../utils/supabase'
 
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null)       // profile row
   const [stats, setStats] = useState(null)
   const [tasks, setTasks] = useState([])
   const [loading, setLoading] = useState(false)
   const [toast, setToastState] = useState(null)
   const toastTimerRef = useRef(null)
 
+  // Load full profile + stats + tasks for a given user id
   const loadUserData = useCallback(async (userId) => {
     setLoading(true)
     try {
-      const [userData, statsData, tasksData] = await Promise.all([
-        api.getUser(userId),
-        api.getUserStats(userId),
-        api.getTasks(userId),
+      const [statsData, tasksData] = await Promise.all([
+        db.getUserStats(userId),
+        db.getTasks(userId),
       ])
-      setUser(userData)
+      setUser(statsData)   // stats includes full profile
       setStats(statsData)
       setTasks(tasksData)
     } catch (error) {
       console.error('Failed to load user data:', error)
-      setToastState({ message: 'Failed to load data', type: 'error' })
+      setToastFn('Failed to load data', 'error')
     } finally {
       setLoading(false)
     }
   }, [])
 
-  const login = useCallback(async (email) => {
+  // ---------------------------------------------------------------------------
+  // AUTH
+  // ---------------------------------------------------------------------------
+
+  const login = useCallback(async (email, password) => {
     setLoading(true)
     try {
-      const userData = await api.login(email)
-      await AsyncStorage.setItem('practicebeats_user_id', userData.id.toString())
-      await loadUserData(userData.id)
-      return userData
+      const authUser = await auth.signIn(email, password)
+      await loadUserData(authUser.id)
     } catch (error) {
-      setToastState({ message: error.message, type: 'error' })
+      setToastFn(error.message, 'error')
       throw error
     } finally {
       setLoading(false)
@@ -49,12 +50,10 @@ export function AppProvider({ children }) {
   const register = useCallback(async (userData) => {
     setLoading(true)
     try {
-      const newUser = await api.register(userData)
-      await AsyncStorage.setItem('practicebeats_user_id', newUser.id.toString())
-      await loadUserData(newUser.id)
-      return newUser
+      const authUser = await auth.signUp(userData.email, userData.password, userData)
+      if (authUser) await loadUserData(authUser.id)
     } catch (error) {
-      setToastState({ message: error.message, type: 'error' })
+      setToastFn(error.message, 'error')
       throw error
     } finally {
       setLoading(false)
@@ -62,83 +61,97 @@ export function AppProvider({ children }) {
   }, [loadUserData])
 
   const logout = useCallback(async () => {
-    await AsyncStorage.removeItem('practicebeats_user_id')
+    await auth.signOut()
     setUser(null)
     setStats(null)
     setTasks([])
   }, [])
 
+  // ---------------------------------------------------------------------------
+  // REFRESH
+  // ---------------------------------------------------------------------------
+
   const refreshStats = useCallback(async () => {
-    if (!user) return
+    if (!user?.id) return
     try {
-      const [statsData, userData] = await Promise.all([
-        api.getUserStats(user.id),
-        api.getUser(user.id),
-      ])
+      const statsData = await db.getUserStats(user.id)
+      setUser(statsData)
       setStats(statsData)
-      setUser(userData)
     } catch (error) {
       console.error('Failed to refresh stats:', error)
     }
   }, [user])
 
   const refreshTasks = useCallback(async () => {
-    if (!user) return
+    if (!user?.id) return
     try {
-      const tasksData = await api.getTasks(user.id)
+      const tasksData = await db.getTasks(user.id)
       setTasks(tasksData)
     } catch (error) {
       console.error('Failed to refresh tasks:', error)
     }
   }, [user])
 
+  // ---------------------------------------------------------------------------
+  // TASKS
+  // ---------------------------------------------------------------------------
+
   const createTask = useCallback(async (taskData) => {
     try {
-      const newTask = await api.createTask({ ...taskData, user_id: user.id })
+      const newTask = await db.createTask({ ...taskData, user_id: user.id })
       setTasks(prev => [newTask, ...prev])
-      setToast('Task created!', 'success')
+      setToastFn('Task created!', 'success')
       return newTask
     } catch (error) {
-      setToast(error.message, 'error')
+      setToastFn(error.message, 'error')
       throw error
     }
   }, [user])
 
   const updateTask = useCallback(async (taskId, updates) => {
     try {
-      const updated = await api.updateTask(taskId, updates)
+      const updated = await db.updateTask(taskId, updates)
       setTasks(prev => prev.map(t => t.id === taskId ? updated : t))
       return updated
     } catch (error) {
-      setToast(error.message, 'error')
+      setToastFn(error.message, 'error')
       throw error
     }
   }, [])
 
   const deleteTask = useCallback(async (taskId) => {
     try {
-      await api.deleteTask(taskId)
+      await db.deleteTask(taskId)
       setTasks(prev => prev.filter(t => t.id !== taskId))
-      setToast('Task deleted', 'success')
+      setToastFn('Task deleted', 'success')
     } catch (error) {
-      setToast(error.message, 'error')
+      setToastFn(error.message, 'error')
       throw error
     }
   }, [])
 
+  // ---------------------------------------------------------------------------
+  // SESSIONS
+  // ---------------------------------------------------------------------------
+
   const saveSession = useCallback(async (sessionData) => {
     try {
-      const session = await api.createSession({ ...sessionData, user_id: user.id })
+      // Pass current profile so business logic (XP, streak) can run client-side
+      const session = await db.createSession(sessionData, user)
       await Promise.all([refreshStats(), refreshTasks()])
-      setToast(`+${session.points_earned} XP earned!`, 'success')
+      setToastFn(`+${session.points_earned} XP earned!`, 'success')
       return session
     } catch (error) {
-      setToast(error.message, 'error')
+      setToastFn(error.message, 'error')
       throw error
     }
   }, [user, refreshStats, refreshTasks])
 
-  const setToast = useCallback((message, type = 'info') => {
+  // ---------------------------------------------------------------------------
+  // TOAST
+  // ---------------------------------------------------------------------------
+
+  const setToastFn = useCallback((message, type = 'info') => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToastState({ message, type })
     toastTimerRef.current = setTimeout(() => {
@@ -148,10 +161,7 @@ export function AppProvider({ children }) {
   }, [])
 
   const clearToast = useCallback(() => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current)
-      toastTimerRef.current = null
-    }
+    if (toastTimerRef.current) { clearTimeout(toastTimerRef.current); toastTimerRef.current = null }
     setToastState(null)
   }, [])
 
@@ -162,7 +172,7 @@ export function AppProvider({ children }) {
       refreshStats, refreshTasks,
       createTask, updateTask, deleteTask,
       saveSession,
-      setToast, clearToast,
+      setToast: setToastFn, clearToast,
     }}>
       {children}
     </AppContext.Provider>

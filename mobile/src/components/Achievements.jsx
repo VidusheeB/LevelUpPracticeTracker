@@ -1,7 +1,7 @@
 import { View, Text, ScrollView } from 'react-native'
 import { useState, useEffect } from 'react'
 import { useApp } from '../contexts/AppContext'
-import { api } from '../utils/api'
+import { db } from '../utils/supabase'
 
 const ALL_BADGES = [
   { type: 'first_session', name: 'First Steps', icon: '🎵', description: 'Complete your first practice session' },
@@ -21,7 +21,7 @@ export default function Achievements() {
 
   useEffect(() => {
     if (!user?.id) return
-    api.getUserBadges(user.id)
+    db.getUserBadges(user.id)
       .then(badges => setEarnedBadges(badges.map(b => b.badge_type).filter(Boolean)))
       .catch(err => console.error('Failed to load badges:', err))
       .finally(() => setLoading(false))

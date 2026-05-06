@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal } from 'react-native'
 import { useState, useEffect } from 'react'
 import { useApp } from '../contexts/AppContext'
-import { api } from '../utils/api'
+import { db } from '../utils/supabase'
 
 export default function TeacherDashboard() {
   const { user, setToast } = useApp()
@@ -20,7 +20,7 @@ export default function TeacherDashboard() {
     const load = async () => {
       setLoading(true)
       try {
-        const data = await api.getTeacherStudents(user.id)
+        const data = await db.getTeacherStudents(user.id)
         setStudents(data)
       } catch (error) {
         console.error('Failed to load students:', error)
@@ -38,14 +38,14 @@ export default function TeacherDashboard() {
     setNotes([])
     try {
       const [summary, activity, conversation] = await Promise.all([
-        api.getStudentSummary(user.id, student.id),
-        api.getStudentActivityLog(user.id, student.id),
-        api.getNotesConversation(user.id, student.id),
+        db.getStudentSummary(user.id, student.id),
+        db.getStudentActivityLog(user.id, student.id),
+        db.getNotesConversation(user.id, student.id),
       ])
       setStudentSummary(summary)
       setActivityLog(activity)
       setNotes([...conversation].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
-      await api.markAllNotesRead(user.id, student.id)
+      await db.markAllNotesRead(user.id, student.id)
     } catch (error) {
       console.error('Failed to load student details:', error)
     }
@@ -55,7 +55,7 @@ export default function TeacherDashboard() {
     if (!newNote.trim() || !selectedStudent) return
     setSendingNote(true)
     try {
-      const note = await api.sendNote(user.id, selectedStudent.id, newNote.trim())
+      const note = await db.sendNote(user.id, selectedStudent.id, newNote.trim())
       setNotes([...notes, note])
       setNewNote('')
       setToast('Note sent!', 'success')

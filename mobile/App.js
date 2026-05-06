@@ -6,7 +6,7 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createStackNavigator } from '@react-navigation/stack'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { supabase } from './src/utils/supabase'
 
 import { AppProvider, useApp } from './src/contexts/AppContext'
 
@@ -118,17 +118,13 @@ function RootNavigator() {
   const [bootstrapping, setBootstrapping] = useState(true)
 
   useEffect(() => {
-    const restore = async () => {
-      try {
-        const savedId = await AsyncStorage.getItem('practicebeats_user_id')
-        if (savedId) await loadUserData(parseInt(savedId, 10))
-      } catch {
-        await AsyncStorage.removeItem('practicebeats_user_id')
-      } finally {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadUserData(session.user.id).finally(() => setBootstrapping(false))
+      } else {
         setBootstrapping(false)
       }
-    }
-    restore()
+    })
   }, [])
 
   if (bootstrapping || loading) {

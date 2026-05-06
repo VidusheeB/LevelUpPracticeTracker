@@ -12,6 +12,7 @@ export default function Login() {
   const [section, setSection] = useState('brass')
   const [role, setRole] = useState('personal')
   const [teacherCode, setTeacherCode] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -19,30 +20,17 @@ export default function Login() {
     setError('')
     if (isRegistering && !name.trim()) { setError('Please enter your name'); return }
     if (!email.trim()) { setError('Please enter your email'); return }
+    if (!password.trim()) { setError('Please enter your password'); return }
 
     setLoading(true)
     try {
       if (isRegistering) {
-        const userData = { name, email, instrument, section, role }
+        const userData = { name, email, password, instrument, section, role }
         if (role === 'student' && teacherCode) userData.teacher_code_to_join = teacherCode
         await register(userData)
       } else {
-        await login(email)
+        await login(email, password)
       }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleDemoLogin = async (demoEmail) => {
-    if (loading) return
-    setEmail(demoEmail)
-    setError('')
-    setLoading(true)
-    try {
-      await login(demoEmail)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -108,8 +96,22 @@ export default function Login() {
               className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
               value={email}
               onChangeText={setEmail}
-              placeholder="alex@demo.com"
+              placeholder="you@example.com"
               keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Password */}
+          <View className="mb-4">
+            <Text className="text-sm font-medium text-gray-700 mb-1">Password</Text>
+            <TextInput
+              className="border border-gray-200 rounded-xl px-4 py-3 text-gray-900"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -220,29 +222,6 @@ export default function Login() {
             </TouchableOpacity>
           </View>
 
-          {/* Demo Accounts */}
-          {!isRegistering && (
-            <View className="mt-6 pt-6 border-t border-gray-100">
-              <Text className="text-sm text-gray-500 text-center mb-3">Quick Demo Login:</Text>
-              <View className="flex-row flex-wrap gap-2 justify-center">
-                {[
-                  { email: 'alex@demo.com', label: 'Alex', emoji: '🎺' },
-                  { email: 'sam@demo.com', label: 'Sam', emoji: '🎹' },
-                  { email: 'jordan@demo.com', label: 'Jordan', emoji: '🎷' },
-                ].map(demo => (
-                  <TouchableOpacity
-                    key={demo.email}
-                    onPress={() => handleDemoLogin(demo.email)}
-                    disabled={loading}
-                    className="flex-row items-center gap-1 px-3 py-2 bg-gray-100 rounded-lg"
-                  >
-                    <Text>{demo.emoji}</Text>
-                    <Text className="text-sm">{demo.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
         </View>
 
         <Text className="text-indigo-200 text-sm mt-6 text-center">

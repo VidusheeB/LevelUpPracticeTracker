@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Switch } from 'rea
 import { useState, useEffect } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { useApp } from '../contexts/AppContext'
-import { api } from '../utils/api'
+import { db } from '../utils/supabase'
 
 export default function EnsembleDashboard() {
   const { user, setToast, loadUserData } = useApp()
@@ -22,8 +22,8 @@ export default function EnsembleDashboard() {
     const load = async () => {
       try {
         const [teacherData, notesData] = await Promise.all([
-          api.getUser(user.teacher_id),
-          api.getNotes(user.id, user.teacher_id),
+          db.getProfile(user.teacher_id),
+          db.getNotes(user.id, user.teacher_id),
         ])
         setTeacher(teacherData)
         setMessages([...notesData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
@@ -38,10 +38,10 @@ export default function EnsembleDashboard() {
     if (!replyText.trim() || !user?.teacher_id) return
     setSending(true)
     try {
-      await api.sendNote(user.id, user.teacher_id, replyText.trim())
+      await db.sendNote(user.id, user.teacher_id, replyText.trim())
       setToast('Message sent! 📨', 'success')
       setReplyText('')
-      const data = await api.getNotes(user.id, user.teacher_id)
+      const data = await db.getNotes(user.id, user.teacher_id)
       setMessages([...data].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
     } catch (error) {
       setToast(error.message || 'Failed to send', 'error')
@@ -55,7 +55,7 @@ export default function EnsembleDashboard() {
     setUpdatingShare(true)
     try {
       const newVal = !user.share_practice_with_teacher
-      await api.updateUser(user.id, { share_practice_with_teacher: newVal })
+      await db.updateProfile(user.id, { share_practice_with_teacher: newVal })
       await loadUserData(user.id)
       setToast(newVal ? 'Sharing enabled' : 'Sharing disabled', 'success')
     } catch (error) {

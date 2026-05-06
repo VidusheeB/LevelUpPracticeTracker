@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput } from 'react-native'
 import { useState, useEffect } from 'react'
 import { useApp } from '../contexts/AppContext'
-import { api } from '../utils/api'
+import { db } from '../utils/supabase'
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -24,8 +24,8 @@ export default function Calendar() {
         weekEnd.setDate(weekStart.getDate() + 6)
 
         const [sessionsData, eventsData] = await Promise.all([
-          api.getSessions(user.id, weekStart.toISOString().split('T')[0], weekEnd.toISOString().split('T')[0]),
-          api.getCalendarEvents(user.id),
+          db.getSessions(user.id, weekStart.toISOString().split('T')[0], weekEnd.toISOString().split('T')[0]),
+          db.getCalendarEvents(user.id),
         ])
         if (!cancelled) { setSessions(sessionsData); setCalendarEvents(eventsData) }
       } catch (error) {
@@ -73,7 +73,7 @@ export default function Calendar() {
   const handleCreateEvent = async () => {
     if (!newEvent.title.trim() || !newEvent.date) { setToast('Title and date are required', 'error'); return }
     try {
-      const created = await api.createCalendarEvent({
+      const created = await db.createCalendarEvent({
         user_id: user.id,
         title: newEvent.title,
         event_type: newEvent.event_type,
@@ -92,7 +92,7 @@ export default function Calendar() {
 
   const handleDeleteEvent = async (eventId) => {
     try {
-      await api.deleteCalendarEvent(eventId)
+      await db.deleteCalendarEvent(eventId)
       setCalendarEvents(calendarEvents.filter(e => e.id !== eventId))
       setToast('Event deleted', 'success')
     } catch (error) {
