@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useApp } from '../contexts/AppContext'
+import MindfulCheckIn from './MindfulCheckIn'
 
 export default function PracticeSession() {
   const navigation = useNavigation()
@@ -18,6 +19,7 @@ export default function PracticeSession() {
   const [energyRating, setEnergyRating] = useState(0)
   const [notes, setNotes] = useState('')
   const [sessionResult, setSessionResult] = useState(null)
+  const [showCheckIn, setShowCheckIn] = useState(false)
 
   useEffect(() => {
     if (route.params?.selectedTask) {
@@ -74,6 +76,7 @@ export default function PracticeSession() {
       })
       setSessionResult(result)
       setPhase('complete')
+      setShowCheckIn(true)
     } catch {
       setToast('Failed to save session', 'error')
     }
@@ -272,6 +275,16 @@ export default function PracticeSession() {
         <TouchableOpacity onPress={() => navigation.navigate('Home')} className="bg-indigo-500 rounded-xl px-8 py-4">
           <Text className="text-white font-semibold">Back to Dashboard</Text>
         </TouchableOpacity>
+
+        {showCheckIn && (
+          <MindfulCheckIn
+            session={sessionResult}
+            onDismiss={() => {
+              setShowCheckIn(false)
+              navigation.navigate('Home')
+            }}
+          />
+        )}
       </View>
     )
   }

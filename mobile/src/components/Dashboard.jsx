@@ -4,6 +4,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native'
 import { useApp } from '../contexts/AppContext'
 import { db } from '../utils/supabase'
 import TaskCard from './TaskCard'
+import TodayRecommendation from './TodayRecommendation'
 
 export default function Dashboard() {
   const navigation = useNavigation()
@@ -199,6 +200,9 @@ export default function Dashboard() {
         )}
       </View>
 
+      {/* AI Practice Plan */}
+      <TodayRecommendation />
+
       {/* Start Practice CTA */}
       <TouchableOpacity
         onPress={() => navigation.navigate('Practice')}
@@ -206,6 +210,15 @@ export default function Dashboard() {
       >
         <Text className="text-white text-xl">▶</Text>
         <Text className="text-white font-semibold text-lg">Start Practice Session</Text>
+      </TouchableOpacity>
+
+      {/* Weekly Reflection */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate('DeepCheckIn')}
+        className="bg-purple-50 rounded-2xl py-4 items-center flex-row justify-center gap-2 border border-purple-100"
+      >
+        <Text className="text-lg">📓</Text>
+        <Text className="text-purple-700 font-semibold">Weekly Reflection</Text>
       </TouchableOpacity>
 
       {/* Mascot */}

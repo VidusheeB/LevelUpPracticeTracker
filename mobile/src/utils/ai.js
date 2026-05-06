@@ -155,6 +155,179 @@ Return ONLY valid JSON, no markdown:
   return result
 }
 
+// Generate the quick post-session follow-up question.
+// Claude reads actual task notes and previous log entries to ask something
+// specific — never generic. Returns a single question string.
+export async function getQuickFollowUp(lastSession, tasks, recentLogs) {
+  const sessionSummary = lastSession
+    ? `Just finished: ${lastSession.duration_minutes} min session, focus rating ${lastSession.focus_rating}/5`
+    : 'Just finished a practice session.'
+
+  const taskContext = tasks.slice(0, 5).map(t => {
+    const notes = t.recentNote ? `last note: "${t.recentNote}"` : 'no notes yet'
+    return `• ${t.title} — ${t.total_time_practiced || 0}/${t.estimated_minutes || 30} min logged, readiness ${t.readiness_score || 0}% — ${notes}`
+  }).join('\n')
+
+  const logContext = recentLogs.slice(0, 5).map(l => {
+    const answers = (l.entries || []).map(e => `Q: ${e.q} → A: ${e.a}`).join('; ')
+    return `• ${new Date(l.created_at).toLocaleDateString()}: mood ${l.mood_score}/5 — ${answers}`
+  }).join('\n') || 'No previous check-ins.'
+
+  const prompt = `A music student just finished a practice session. Generate ONE specific follow-up question for their post-session log.
+
+${sessionSummary}
+
+Their current tasks and notes:
+${taskContext || 'No tasks yet.'}
+
+Recent check-in history:
+${logContext}
+
+Rules:
+- Reference a SPECIFIC piece, passage, or note from their data — never ask generically
+- If a task note mentions something struggling, follow up on exactly that
+- If a previous check-in mentioned something, build on it
+- Examples of BAD questions: "How did practice feel?" / "Did anything click?"
+- Examples of GOOD questions: "Your notes say bar 12 of Autumn Leaves was slipping — did those chord changes feel more natural today?" / "Last time you said the B section on Donnelly felt rushed. Did the slower tempo help?"
+- Return ONLY the question, no preamble, no quotes around it.`
+
+  return callClaude(prompt, 150)
+}
+
+// Generate the full deep check-in questionnaire.
+// Claude reads tasks, notes, mood history, and calendar events to produce
+// a set of named, specific questions — not a generic wellness survey.
+export async function getDeepCheckInQuestions(tasks, moodLogs, calendarEvents) {
+  const taskContext = tasks.slice(0, 8).map(t => {
+    const notes = t.recentNote ? `, last note: "${t.recentNote}"` : ''
+    return `• ${t.title} (${t.category}) — ${t.readiness_score || 0}% ready, ${t.total_time_practiced || 0} min logged${notes}`
+  }).join('\n')
+
+  const moodHistory = moodLogs.slice(0, 10).map(l => {
+    const answers = (l.entries || []).map(e => `${e.q}: ${e.a}`).join(' | ')
+    return `• ${new Date(l.created_at).toLocaleDateString()}: mood ${l.mood_score}/5 — ${answers}`
+  }).join('\n') || 'First check-in.'
+
+  const upcomingEvents = calendarEvents.slice(0, 5).map(e =>
+    `• ${e.title} on ${new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`
+  ).join('\n') || 'No upcoming events.'
+
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+
+  const prompt = `Today is ${today}. Generate a short, targeted check-in questionnaire for a music student. This is their weekly mindful practice journal.
+
+Their tasks and notes:
+${taskContext || 'No tasks yet.'}
+
+Mood and check-in history:
+${moodHistory}
+
+Upcoming calendar events:
+${upcomingEvents}
+
+Generate 5-6 questions. Structure:
+1. Always start with mood (emoji scale 1-5, label each: 😴 exhausted → 😐 okay → 😊 good → ⚡ energised)
+2. A gratitude question — specific to their music life if possible (e.g. "Name one moment from practice this week that felt good, even small")
+3. A frustration/challenge question — reference a specific task or passage from their data that looks stuck
+4. A question about something upcoming from their calendar if relevant (e.g. AP exams, a rehearsal)
+5. A goal-setting question for the coming week — tied to their actual task list
+6. Optionally: a reflection question that builds on a thread from a previous check-in
+
+Rules:
+- Every question must reference specific data — piece names, bar numbers, task titles, calendar events. No generic wellness questions.
+- Keep each question to 1-2 sentences max.
+- Return ONLY a JSON array, no markdown:
+[
+  { "id": "mood", "type": "emoji_scale", "question": "How are you feeling right now?" },
+  { "id": "gratitude", "type": "text", "question": "..." },
+  { "id": "frustration", "type": "text", "question": "..." },
+  { "id": "upcoming", "type": "text", "question": "..." },
+  { "id": "goal", "type": "text", "question": "..." }
+]
+type is either "emoji_scale" or "text".`
+
+  const raw = await callClaude(prompt, 600)
+  const clean = raw.replace(/```json\n?|```\n?/g, '').trim()
+  return JSON.parse(clean)
+}
+
+// Generate today's targeted practice recommendation.
+// Grounded in research: deliberate practice (Ericsson), cognitive load theory,
+// interleaved vs blocked practice, spaced retrieval, Pomodoro for high-stress.
+export async function getPracticeRecommendation(tasks, moodLogs, calendarEvents, sessionHistory) {
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+  const currentHour = new Date().getHours()
+  const timeOfDay = currentHour < 12 ? 'morning' : currentHour < 17 ? 'afternoon' : 'evening'
+
+  const taskContext = tasks.filter(t => t.status !== 'ready').slice(0, 6).map(t => {
+    const notes = t.recentNote ? `, note: "${t.recentNote}"` : ''
+    const dueStr = t.due_date ? `, due ${new Date(t.due_date + 'T12:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''
+    return `• ${t.title} (${t.category}) — ${t.readiness_score || 0}% ready, ${t.total_time_practiced || 0}/${t.estimated_minutes || 30} min${dueStr}${notes}`
+  }).join('\n')
+
+  const recentMood = moodLogs.slice(0, 7)
+  const avgMood = recentMood.length
+    ? (recentMood.reduce((s, l) => s + (l.mood_score || 3), 0) / recentMood.length).toFixed(1)
+    : null
+  const todayMood = moodLogs[0]
+  const moodContext = todayMood
+    ? `Today's mood: ${todayMood.mood_score}/5. 7-day average: ${avgMood}/5.`
+    : avgMood ? `No check-in today. 7-day mood average: ${avgMood}/5.` : 'No mood data yet.'
+
+  const recentFrustrations = moodLogs
+    .flatMap(l => (l.entries || []).filter(e => e.id === 'frustration' && e.a).map(e => e.a))
+    .slice(0, 3).map(f => `• "${f}"`).join('\n')
+
+  const upcomingEvents = calendarEvents
+    .filter(e => new Date(e.date) >= new Date())
+    .slice(0, 5)
+    .map(e => `• ${e.title} — ${new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`)
+    .join('\n') || 'Nothing upcoming.'
+
+  const recentSessionMins = sessionHistory.slice(0, 7)
+    .reduce((s, sess) => s + (sess.duration_minutes || 0), 0)
+
+  const prompt = `Today is ${today}, ${timeOfDay}. You are a music practice coach generating today's specific practice recommendation for a student.
+
+Mood & wellbeing:
+${moodContext}
+${recentFrustrations ? `Recent frustrations from journal:\n${recentFrustrations}` : ''}
+
+Practice tasks (not yet ready):
+${taskContext || 'No active tasks.'}
+
+Upcoming calendar events:
+${upcomingEvents}
+
+Practice volume this week: ${recentSessionMins} minutes across ${Math.min(sessionHistory.length, 7)} sessions.
+
+Generate a specific, research-backed practice recommendation for today. You must:
+
+1. NAME the exact task, piece, and passage to work on (e.g. "bars 9-16 of the Donnelly B section" not "work on repertoire")
+2. NAME the specific practice METHOD with brief rationale from research:
+   - High stress / low energy / big events coming → short targeted session, cognitive load theory, spaced retrieval on one small thing
+   - Good mood / high energy → deliberate practice on weakest point, interleaved with a second task
+   - Consistent low mood this week → mental practice or listening-based session (reduces performance anxiety)
+   - Behind on a due date → blocked repetition at 60-70% tempo, Pomodoro structure
+3. Give a SPECIFIC duration and structure (e.g. "25 min: 5 min slow run-through, 15 min bars 9-16 at 60% tempo × 5 reps, 5 min full tempo playthrough")
+4. Keep the tone direct and coach-like, 3-5 sentences max. No fluff.
+
+Return ONLY a JSON object:
+{
+  "headline": "10-min targeted session on Autumn Leaves changes",
+  "method": "Spaced retrieval",
+  "method_reason": "AP exams this week — cognitive load research shows short, targeted retrieval beats long sessions under high stress",
+  "task_focus": "Autumn Leaves — bars 9-16, the ii-V-I turnaround",
+  "duration_minutes": 10,
+  "structure": "5 min slow hands-only at 60% tempo, 5 min full tempo × 3 reps. Stop there.",
+  "full_tip": "You have AP exams tomorrow and your mood has been low all week. Research on cognitive load says this isn't the time for new material — consolidation works better. Spend exactly 10 minutes on bars 9-16 of Autumn Leaves, the ii-V-I you noted is still slipping. Slow tempo, three clean reps. That's it for today."
+}`
+
+  const raw = await callClaude(prompt, 500)
+  const clean = raw.replace(/```json\n?|```\n?/g, '').trim()
+  return JSON.parse(clean)
+}
+
 // Generate a personalised coaching tip based on practice history + notes
 export async function getCoachingTip(taskTitle, practiceMinutes, notes) {
   const n = sanitizeNotes(notes)

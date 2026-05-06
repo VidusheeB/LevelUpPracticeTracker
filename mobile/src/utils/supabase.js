@@ -309,6 +309,31 @@ export const db = {
     if (error) throw new Error(error.message)
   },
 
+  // Mood Logs — quick (post-session) and deep (weekly) check-ins
+  async saveMoodLog(userId, { type, mood_score, entries, session_id = null }) {
+    const { data, error } = await supabase
+      .from('mood_logs')
+      .insert({ user_id: userId, type, mood_score, entries, session_id })
+      .select().single()
+    if (error) throw new Error(error.message)
+    return data
+  },
+
+  async getMoodLogs(userId, limit = 30) {
+    const { data, error } = await supabase
+      .from('mood_logs').select('*').eq('user_id', userId)
+      .order('created_at', { ascending: false }).limit(limit)
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+
+  async getLastDeepCheckIn(userId) {
+    const { data } = await supabase
+      .from('mood_logs').select('*').eq('user_id', userId).eq('type', 'deep')
+      .order('created_at', { ascending: false }).limit(1).single()
+    return data || null
+  },
+
   // Push Tokens — one row per device, upserted on every login
   async savePushToken(userId, token, platform) {
     const { error } = await supabase

@@ -28,6 +28,7 @@ import ChallengeLeaderboard from './src/components/ChallengeLeaderboard'
 import StudentEnsembleView from './src/components/StudentEnsembleView'
 import TaskDetail from './src/components/TaskDetail'
 import PrivacyPolicy from './src/components/PrivacyPolicy'
+import DeepCheckIn from './src/components/DeepCheckIn'
 import Toast from './src/components/Toast'
 
 const Tab = createBottomTabNavigator()
@@ -162,6 +163,11 @@ function AppStack() {
         name="PrivacyPolicy"
         component={PrivacyPolicy}
         options={{ headerShown: true, title: 'Privacy Policy', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="DeepCheckIn"
+        component={DeepCheckIn}
+        options={{ headerShown: true, title: 'Weekly Reflection', headerTintColor: '#6366f1' }}
       />
     </Stack.Navigator>
   )
