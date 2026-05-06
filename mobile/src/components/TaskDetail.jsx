@@ -4,7 +4,6 @@ import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/nativ
 import { useApp } from '../contexts/AppContext'
 import { db } from '../utils/supabase'
 import { getCoachingTip, getSmartReminderData } from '../utils/ai'
-import { scheduleSmartReminder, cancelTaskReminder } from '../utils/notifications'
 
 const CATEGORY_ICONS = {
   repertoire: '🎵',
@@ -57,7 +56,6 @@ export default function TaskDetail() {
 
   const rescheduleSmartReminder = async (currentNotes) => {
     try {
-      // Fetch recent sessions so Claude can see when this user typically practices
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       const sessions = await db.getSessions(user.id, thirtyDaysAgo.toISOString().split('T')[0])
@@ -69,9 +67,12 @@ export default function TaskDetail() {
       )
 
       const { remind_at, message } = await getSmartReminderData(task, currentNotes, sessionTimes)
-      await scheduleSmartReminder(task.id, message, remind_at)
+
+      // Store in Supabase — the edge function delivers it to ALL the user's
+      // devices at the Claude-chosen time, not just the device they're on now.
+      await db.scheduleNotification(user.id, task.id, 'PracticeBeats 🎵', message, remind_at)
     } catch {
-      // Silent — notifications are best-effort, don't interrupt the user
+      // Silent — notifications are best-effort
     }
   }
 

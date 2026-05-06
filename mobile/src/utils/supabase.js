@@ -309,6 +309,39 @@ export const db = {
     if (error) throw new Error(error.message)
   },
 
+  // Push Tokens — one row per device, upserted on every login
+  async savePushToken(userId, token, platform) {
+    const { error } = await supabase
+      .from('push_tokens')
+      .upsert({ user_id: userId, token, platform }, { onConflict: 'token' })
+    if (error) throw new Error(error.message)
+  },
+
+  // Server-side notification queue — replaces local scheduling for smart reminders.
+  // Deletes any existing unsent reminder for this task first so there's never a duplicate.
+  async scheduleNotification(userId, taskId, title, body, sendAt) {
+    await supabase
+      .from('scheduled_notifications')
+      .delete()
+      .eq('user_id', userId)
+      .eq('task_id', taskId)
+      .eq('sent', false)
+
+    const { error } = await supabase
+      .from('scheduled_notifications')
+      .insert({ user_id: userId, task_id: taskId, title, body, send_at: sendAt })
+    if (error) throw new Error(error.message)
+  },
+
+  async cancelScheduledNotification(userId, taskId) {
+    await supabase
+      .from('scheduled_notifications')
+      .delete()
+      .eq('user_id', userId)
+      .eq('task_id', taskId)
+      .eq('sent', false)
+  },
+
   // Task Notes (AI practice journal)
   async getTaskNotes(taskId) {
     const { data, error } = await supabase

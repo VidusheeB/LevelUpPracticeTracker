@@ -1,4 +1,5 @@
 import * as Notifications from 'expo-notifications'
+import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 
 Notifications.setNotificationHandler({
@@ -21,7 +22,31 @@ export async function requestNotificationPermissions() {
   return status === 'granted'
 }
 
-// Schedule a day-before reminder for a calendar event
+// Register this device's Expo push token in Supabase so the edge function
+// can reach it. Called once per login — safe to call multiple times (upserts).
+// saveTokenFn should be db.savePushToken bound to the user's id.
+export async function registerPushToken(userId, saveTokenFn) {
+  try {
+    const granted = await requestNotificationPermissions()
+    if (!granted) return
+
+    // projectId comes from eas.json after running `eas init`
+    const projectId = Constants.expoConfig?.extra?.eas?.projectId
+    const tokenData = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : {}
+    )
+
+    await saveTokenFn(userId, tokenData.data, Platform.OS)
+  } catch (err) {
+    // Silent — push registration fails gracefully in Expo Go dev builds
+    // that haven't been configured with EAS yet
+    console.log('Push token registration skipped:', err.message)
+  }
+}
+
+// ─── Calendar event reminders (local — these are personal, single-device) ───
+
+// Schedule a day-before reminder for a calendar event (stays local/on-device)
 export async function scheduleEventReminder(eventId, title, dateStr, eventTime = '09:00') {
   try {
     const [h, m] = (eventTime || '09:00').split(':').map(Number)
@@ -46,64 +71,16 @@ export async function scheduleEventReminder(eventId, title, dateStr, eventTime =
   } catch {}
 }
 
-// Schedule a morning-of reminder for a task due date
-export async function scheduleTaskDueReminder(taskId, title, dueDateStr) {
-  try {
-    const dueDate = new Date(dueDateStr)
-    dueDate.setHours(8, 0, 0, 0)
-
-    if (dueDate <= new Date()) return
-
-    await Notifications.scheduleNotificationAsync({
-      identifier: `task-${taskId}`,
-      content: {
-        title: 'PracticeBeats 🎵',
-        body: `Finish "${title}" by tonight`,
-        sound: 'default',
-      },
-      trigger: { date: dueDate, channelId: 'practicebeats' },
-    })
-  } catch {}
-}
-
 export async function cancelEventReminder(eventId) {
   try {
     await Notifications.cancelScheduledNotificationAsync(`event-${eventId}`)
   } catch {}
 }
 
-export async function cancelTaskReminder(taskId) {
-  try {
-    await Notifications.cancelScheduledNotificationAsync(`task-${taskId}`)
-  } catch {}
-}
-
-// Schedule an AI-written notification at a Claude-chosen time.
-// Cancels any existing reminder for this task first so there's no duplicate.
-export async function scheduleSmartReminder(taskId, message, remindAtStr) {
-  try {
-    const granted = await requestNotificationPermissions()
-    if (!granted) return
-
-    const remindAt = new Date(remindAtStr)
-    if (isNaN(remindAt.getTime()) || remindAt <= new Date()) return
-
-    // Cancel the old generic reminder before setting the smart one
-    await cancelTaskReminder(taskId)
-
-    await Notifications.scheduleNotificationAsync({
-      identifier: `task-${taskId}`,
-      content: {
-        title: 'PracticeBeats 🎵',
-        body: message,
-        sound: 'default',
-      },
-      trigger: { date: remindAt, channelId: 'practicebeats' },
-    })
-  } catch {}
-}
-
-// Idempotent: cancel existing, reschedule all upcoming
+// Schedule local reminders for calendar events and tasks with due dates.
+// Task smart reminders now go through the server (db.scheduleNotification),
+// but we keep local scheduling for calendar events and basic task due dates
+// as a fallback for devices that haven't registered a push token yet.
 export async function scheduleAllReminders(events = [], tasks = []) {
   const granted = await requestNotificationPermissions()
   if (!granted) return
@@ -112,17 +89,8 @@ export async function scheduleAllReminders(events = [], tasks = []) {
 
   for (const event of events) {
     if (!event.date) continue
-    const d = new Date(event.date)
-    if (d >= today) {
+    if (new Date(event.date) >= today) {
       await scheduleEventReminder(event.id, event.title, event.date, event.event_time)
-    }
-  }
-
-  for (const task of tasks) {
-    if (!task.due_date) continue
-    const d = new Date(task.due_date)
-    if (d >= today) {
-      await scheduleTaskDueReminder(task.id, task.title, task.due_date)
     }
   }
 }

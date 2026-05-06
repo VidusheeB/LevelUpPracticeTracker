@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { auth, db } from '../utils/supabase'
+import { registerPushToken } from '../utils/notifications'
 
 const AppContext = createContext(null)
 
@@ -22,6 +23,9 @@ export function AppProvider({ children }) {
       setUser(statsData)   // stats includes full profile
       setStats(statsData)
       setTasks(tasksData)
+      // Register this device's push token so cross-device notifications work.
+      // Fire-and-forget — fails silently in Expo Go before EAS is configured.
+      registerPushToken(userId, db.savePushToken).catch(() => {})
     } catch (error) {
       console.error('Failed to load user data:', error)
       setToastFn('Failed to load data', 'error')
