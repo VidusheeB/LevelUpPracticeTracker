@@ -130,6 +130,14 @@ export function AppProvider({ children }) {
     }
   }, [])
 
+  const joinTeacher = useCallback(async (code) => {
+    const teacher = await db.getTeacherByCode(code)
+    if (!teacher) throw new Error('Teacher code not found. Double-check the code and try again.')
+    await db.updateProfile(user.id, { teacher_id: teacher.id })
+    await refreshStats()
+    setToastFn(`Joined ${teacher.name}'s class!`, 'success')
+  }, [user, refreshStats])
+
   // ---------------------------------------------------------------------------
   // SESSIONS
   // ---------------------------------------------------------------------------
@@ -170,6 +178,7 @@ export function AppProvider({ children }) {
       user, stats, tasks, loading, toast,
       login, register, logout, loadUserData,
       refreshStats, refreshTasks,
+      joinTeacher,
       createTask, updateTask, deleteTask,
       saveSession,
       setToast: setToastFn, clearToast,

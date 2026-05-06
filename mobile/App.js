@@ -14,11 +14,11 @@ import Login from './src/components/Login'
 import Dashboard from './src/components/Dashboard'
 import PracticeSession from './src/components/PracticeSession'
 import Calendar from './src/components/Calendar'
-import EnsembleDashboard from './src/components/EnsembleDashboard'
 import Messages from './src/components/Messages'
 import TaskList from './src/components/TaskList'
 import TeacherDashboard from './src/components/TeacherDashboard'
 import Achievements from './src/components/Achievements'
+import Profile from './src/components/Profile'
 import Toast from './src/components/Toast'
 
 const Tab = createBottomTabNavigator()
@@ -46,12 +46,12 @@ function MainTabs() {
       <Tab.Screen
         name="Home"
         component={Dashboard}
-        options={{ tabBarLabel: 'Home', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>🏠</Text> }}
+        options={{ tabBarLabel: 'Home', tabBarIcon: () => <Text style={{ fontSize: 20 }}>🏠</Text> }}
       />
       <Tab.Screen
         name="Calendar"
         component={Calendar}
-        options={{ tabBarLabel: 'Calendar', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>📅</Text> }}
+        options={{ tabBarLabel: 'Calendar', tabBarIcon: () => <Text style={{ fontSize: 20 }}>📅</Text> }}
       />
       <Tab.Screen
         name="Practice"
@@ -77,19 +77,19 @@ function MainTabs() {
         <Tab.Screen
           name="Students"
           component={TeacherDashboard}
-          options={{ tabBarLabel: 'Students', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>📚</Text> }}
+          options={{ tabBarLabel: 'Students', tabBarIcon: () => <Text style={{ fontSize: 20 }}>📚</Text> }}
         />
       ) : (
         <Tab.Screen
-          name="Team"
-          component={EnsembleDashboard}
-          options={{ tabBarLabel: 'Messages', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>💬</Text> }}
+          name="Tasks"
+          component={TaskList}
+          options={{ tabBarLabel: 'Tasks', tabBarIcon: () => <Text style={{ fontSize: 20 }}>📋</Text> }}
         />
       )}
       <Tab.Screen
-        name="Tasks"
-        component={TaskList}
-        options={{ tabBarLabel: 'Tasks', tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>📋</Text> }}
+        name="Profile"
+        component={Profile}
+        options={{ tabBarLabel: 'Profile', tabBarIcon: () => <Text style={{ fontSize: 20 }}>👤</Text> }}
       />
     </Tab.Navigator>
   )

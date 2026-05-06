@@ -321,6 +321,13 @@ export const db = {
       .eq('sender_id', senderId)
   },
 
+  async getTeacherByCode(code) {
+    const { data } = await supabase
+      .from('profiles').select('id, name, instrument')
+      .eq('teacher_code', code).eq('role', 'teacher').single()
+    return data || null
+  },
+
   // Teacher-student
   async getTeacherStudents(teacherId) {
     const { data, error } = await supabase
