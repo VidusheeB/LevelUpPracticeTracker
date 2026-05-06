@@ -309,6 +309,27 @@ export const db = {
     if (error) throw new Error(error.message)
   },
 
+  // Task Notes (AI practice journal)
+  async getTaskNotes(taskId) {
+    const { data, error } = await supabase
+      .from('task_notes').select('*').eq('task_id', taskId)
+      .order('created_at', { ascending: false })
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+
+  async addTaskNote(taskId, userId, content) {
+    const { data, error } = await supabase
+      .from('task_notes').insert({ task_id: taskId, user_id: userId, content }).select().single()
+    if (error) throw new Error(error.message)
+    return data
+  },
+
+  async deleteTaskNote(noteId) {
+    const { error } = await supabase.from('task_notes').delete().eq('id', noteId)
+    if (error) throw new Error(error.message)
+  },
+
   // Notes / Messaging
   async getNotesConversation(user1Id, user2Id) {
     const { data, error } = await supabase

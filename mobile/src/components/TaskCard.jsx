@@ -32,7 +32,7 @@ export default function TaskCard({ task, rehearsal, showActions = true }) {
   return (
     <TouchableOpacity
       className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
-      onPress={() => navigation.navigate('Practice', { selectedTask: task.id })}
+      onPress={() => navigation.navigate('TaskDetail', { task })}
     >
       <View className="flex-row items-start gap-3">
         <View className="w-10 h-10 rounded-xl bg-indigo-50 items-center justify-center">

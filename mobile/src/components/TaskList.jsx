@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'reac
 import { useState } from 'react'
 import { useApp } from '../contexts/AppContext'
 import TaskCard from './TaskCard'
+import SmartTaskCreate from './SmartTaskCreate'
 
 const categories = [
   { value: 'repertoire', label: 'Repertoire', icon: '🎵' },
@@ -22,6 +23,7 @@ export default function TaskList() {
 
   const [filter, setFilter] = useState('all')
   const [showCreateForm, setShowCreateForm] = useState(false)
+  const [showSmartCreate, setShowSmartCreate] = useState(false)
   const [newTask, setNewTask] = useState({ title: '', category: 'repertoire', difficulty: 3, estimated_minutes: 30 })
 
   const filteredTasks = filter === 'all' ? tasks : tasks.filter(t => t.status === filter)
@@ -62,13 +64,31 @@ export default function TaskList() {
           <Text className="text-2xl font-bold text-gray-900">Tasks</Text>
           <Text className="text-gray-500">{tasks.length} total tasks</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => setShowCreateForm(!showCreateForm)}
-          className="bg-indigo-500 px-4 py-2 rounded-xl"
-        >
-          <Text className="text-white font-semibold">+ New Task</Text>
-        </TouchableOpacity>
+        <View className="flex-row gap-2">
+          <TouchableOpacity
+            onPress={() => setShowSmartCreate(true)}
+            className="bg-indigo-500 px-3 py-2 rounded-xl flex-row items-center gap-1"
+          >
+            <Text className="text-white font-semibold text-sm">✨ Smart</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowCreateForm(!showCreateForm)}
+            className="bg-gray-100 px-3 py-2 rounded-xl"
+          >
+            <Text className="text-gray-700 font-semibold text-sm">+ Manual</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      <SmartTaskCreate
+        visible={showSmartCreate}
+        onClose={() => setShowSmartCreate(false)}
+        onSave={async (parsed) => {
+          try {
+            await createTask(parsed)
+          } catch {}
+        }}
+      />
 
       {/* Filter Tabs */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
