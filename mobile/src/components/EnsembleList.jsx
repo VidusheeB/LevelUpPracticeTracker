@@ -155,6 +155,20 @@ export default function EnsembleList() {
         </View>
       )}
 
+      <TouchableOpacity
+        onPress={() => navigation.navigate('AllStudents')}
+        className="bg-white rounded-2xl p-4 shadow-sm flex-row items-center justify-between"
+      >
+        <View className="flex-row items-center gap-3">
+          <Text style={{ fontSize: 22 }}>👥</Text>
+          <View>
+            <Text className="font-medium text-gray-900">All My Students</Text>
+            <Text className="text-xs text-gray-500">Roster, teacher code, individual notes</Text>
+          </View>
+        </View>
+        <Text className="text-gray-400 text-lg">›</Text>
+      </TouchableOpacity>
+
       {archived.length > 0 && (
         <View className="gap-3">
           <TouchableOpacity

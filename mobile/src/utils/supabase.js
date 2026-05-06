@@ -398,6 +398,12 @@ export const db = {
     return (data || []).map(r => ({ ...r.profiles, joined_at: r.joined_at }))
   },
 
+  async addMemberToEnsemble(ensembleId, studentId) {
+    const { error } = await supabase
+      .from('ensemble_members').insert({ ensemble_id: ensembleId, student_id: studentId })
+    if (error) throw new Error(error.message)
+  },
+
   async removeMemberFromEnsemble(ensembleId, studentId) {
     const { error } = await supabase
       .from('ensemble_members').delete()
@@ -437,7 +443,7 @@ export const db = {
     for (const member of members) {
       const { data: task } = await supabase.from('practice_tasks').insert({
         user_id: member.id, title, category: 'repertoire',
-        estimated_minutes: 30, assigned_by_teacher: true,
+        estimated_minutes: 30,
       }).select().single()
       if (task) {
         await supabase.from('assignment_submissions').insert({

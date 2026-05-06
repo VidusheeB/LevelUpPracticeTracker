@@ -120,6 +120,18 @@ export default function Profile() {
 
       {/* Quick links */}
       <View className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        {user?.role !== 'teacher' && (
+          <TouchableOpacity
+            onPress={() => navigation.navigate('StudentEnsembleView')}
+            className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100"
+          >
+            <View className="flex-row items-center gap-3">
+              <Text style={{ fontSize: 22 }}>🎼</Text>
+              <Text className="font-medium text-gray-900">My Classes & Challenges</Text>
+            </View>
+            <Text className="text-gray-400 text-lg">›</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity
           onPress={() => navigation.navigate('Achievements')}
           className="flex-row items-center justify-between px-4 py-4 border-b border-gray-100"

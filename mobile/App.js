@@ -19,6 +19,13 @@ import TaskList from './src/components/TaskList'
 import TeacherDashboard from './src/components/TeacherDashboard'
 import Achievements from './src/components/Achievements'
 import Profile from './src/components/Profile'
+import EnsembleList from './src/components/EnsembleList'
+import EnsembleDetail from './src/components/EnsembleDetail'
+import AssignmentCreate from './src/components/AssignmentCreate'
+import AssignmentDetail from './src/components/AssignmentDetail'
+import ChallengeCreate from './src/components/ChallengeCreate'
+import ChallengeLeaderboard from './src/components/ChallengeLeaderboard'
+import StudentEnsembleView from './src/components/StudentEnsembleView'
 import Toast from './src/components/Toast'
 
 const Tab = createBottomTabNavigator()
@@ -75,9 +82,9 @@ function MainTabs() {
       />
       {isTeacher ? (
         <Tab.Screen
-          name="Students"
-          component={TeacherDashboard}
-          options={{ tabBarLabel: 'Students', tabBarIcon: () => <Text style={{ fontSize: 20 }}>📚</Text> }}
+          name="Classes"
+          component={EnsembleList}
+          options={{ tabBarLabel: 'Classes', tabBarIcon: () => <Text style={{ fontSize: 20 }}>🎼</Text> }}
         />
       ) : (
         <Tab.Screen
@@ -108,6 +115,41 @@ function AppStack() {
         name="Messages"
         component={Messages}
         options={{ headerShown: true, title: 'Messages', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="EnsembleDetail"
+        component={EnsembleDetail}
+        options={{ headerShown: true, title: 'Class', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="AssignmentCreate"
+        component={AssignmentCreate}
+        options={{ headerShown: true, title: 'New Assignment', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="AssignmentDetail"
+        component={AssignmentDetail}
+        options={{ headerShown: true, title: 'Assignment', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="ChallengeCreate"
+        component={ChallengeCreate}
+        options={{ headerShown: true, title: 'New Challenge', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="ChallengeLeaderboard"
+        component={ChallengeLeaderboard}
+        options={{ headerShown: true, title: 'Leaderboard', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="StudentEnsembleView"
+        component={StudentEnsembleView}
+        options={{ headerShown: true, title: 'My Classes', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="AllStudents"
+        component={TeacherDashboard}
+        options={{ headerShown: true, title: 'All Students', headerTintColor: '#6366f1' }}
       />
     </Stack.Navigator>
   )
