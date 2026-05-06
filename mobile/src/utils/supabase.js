@@ -272,17 +272,36 @@ export const db = {
 
   // Calendar Events
   async getCalendarEvents(userId) {
-    const { data, error } = await supabase
-      .from('calendar_events').select('*').eq('user_id', userId).order('date')
+    // Fetch user's ensemble memberships for OR filter
+    const { data: memberRows } = await supabase
+      .from('ensemble_members').select('ensemble_id').eq('student_id', userId)
+    const ensembleIds = (memberRows || []).map(r => r.ensemble_id)
+
+    let query = supabase
+      .from('calendar_events')
+      .select('*, ensembles:ensemble_id(name)')
+      .order('date')
+
+    const orParts = [`user_id.eq.${userId}`, `created_by.eq.${userId}`]
+    if (ensembleIds.length > 0) {
+      orParts.push(`ensemble_id.in.(${ensembleIds.join(',')})`)
+    }
+    query = query.or(orParts.join(','))
+
+    const { data, error } = await query
     if (error) throw new Error(error.message)
-    return data || []
+    return (data || []).map(e => ({
+      ...e,
+      ensemble_name: e.ensembles?.name || null,
+      is_own: e.user_id === userId || e.created_by === userId,
+    }))
   },
 
   async createCalendarEvent(eventData) {
     const { data, error } = await supabase
-      .from('calendar_events').insert(eventData).select().single()
+      .from('calendar_events').insert(eventData).select('*, ensembles:ensemble_id(name)').single()
     if (error) throw new Error(error.message)
-    return data
+    return { ...data, ensemble_name: data.ensembles?.name || null, is_own: true }
   },
 
   async deleteCalendarEvent(eventId) {
