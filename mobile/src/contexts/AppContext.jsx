@@ -130,6 +130,38 @@ export function AppProvider({ children }) {
     }
   }, [])
 
+  // ---------------------------------------------------------------------------
+  // ENSEMBLES & CHALLENGES
+  // ---------------------------------------------------------------------------
+
+  const createEnsemble = useCallback(async (name, description) => {
+    const ensemble = await db.createEnsemble(user.id, name, description)
+    setToastFn(`${name} created!`, 'success')
+    return ensemble
+  }, [user])
+
+  const archiveEnsemble = useCallback(async (ensembleId, archived) => {
+    await db.updateEnsemble(ensembleId, { archived })
+    setToastFn(archived ? 'Class archived' : 'Class restored', 'success')
+  }, [])
+
+  const deleteEnsemble = useCallback(async (ensembleId) => {
+    await db.deleteEnsemble(ensembleId)
+    setToastFn('Class deleted', 'success')
+  }, [])
+
+  const createChallenge = useCallback(async (challengeData, ensembleIds) => {
+    const challenge = await db.createChallenge({ ...challengeData, teacher_id: user.id }, ensembleIds)
+    setToastFn('Challenge started!', 'success')
+    return challenge
+  }, [user])
+
+  const createAssignment = useCallback(async (assignmentData) => {
+    const assignment = await db.createAssignment({ ...assignmentData, teacher_id: user.id })
+    setToastFn('Assignment created!', 'success')
+    return assignment
+  }, [user])
+
   const joinTeacher = useCallback(async (code) => {
     const teacher = await db.getTeacherByCode(code)
     if (!teacher) throw new Error('Teacher code not found. Double-check the code and try again.')
@@ -179,6 +211,8 @@ export function AppProvider({ children }) {
       login, register, logout, loadUserData,
       refreshStats, refreshTasks,
       joinTeacher,
+      createEnsemble, archiveEnsemble, deleteEnsemble,
+      createChallenge, createAssignment,
       createTask, updateTask, deleteTask,
       saveSession,
       setToast: setToastFn, clearToast,

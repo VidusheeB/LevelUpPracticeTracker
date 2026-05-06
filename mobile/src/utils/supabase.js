@@ -357,4 +357,252 @@ export const db = {
     if (error) throw new Error(error.message)
     return data || []
   },
+
+  // ---------------------------------------------------------------------------
+  // ENSEMBLES
+  // ---------------------------------------------------------------------------
+
+  async getTeacherEnsembles(teacherId) {
+    const { data, error } = await supabase
+      .from('ensembles').select('*').eq('teacher_id', teacherId)
+      .order('created_at', { ascending: false })
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+
+  async createEnsemble(teacherId, name, description = '') {
+    const { data, error } = await supabase
+      .from('ensembles').insert({ teacher_id: teacherId, name, description }).select().single()
+    if (error) throw new Error(error.message)
+    return data
+  },
+
+  async updateEnsemble(ensembleId, updates) {
+    const { data, error } = await supabase
+      .from('ensembles').update(updates).eq('id', ensembleId).select().single()
+    if (error) throw new Error(error.message)
+    return data
+  },
+
+  async deleteEnsemble(ensembleId) {
+    const { error } = await supabase.from('ensembles').delete().eq('id', ensembleId)
+    if (error) throw new Error(error.message)
+  },
+
+  async getEnsembleMembers(ensembleId) {
+    const { data, error } = await supabase
+      .from('ensemble_members')
+      .select('student_id, joined_at, profiles:student_id(id, name, instrument, streak_count, total_points, level)')
+      .eq('ensemble_id', ensembleId)
+    if (error) throw new Error(error.message)
+    return (data || []).map(r => ({ ...r.profiles, joined_at: r.joined_at }))
+  },
+
+  async removeMemberFromEnsemble(ensembleId, studentId) {
+    const { error } = await supabase
+      .from('ensemble_members').delete()
+      .eq('ensemble_id', ensembleId).eq('student_id', studentId)
+    if (error) throw new Error(error.message)
+  },
+
+  async getStudentEnsembles(studentId) {
+    const { data, error } = await supabase
+      .from('ensemble_members')
+      .select('ensemble_id, ensembles:ensemble_id(id, name, description, archived, teacher_id, profiles:teacher_id(name))')
+      .eq('student_id', studentId)
+    if (error) throw new Error(error.message)
+    return (data || []).map(r => ({ ...r.ensembles })).filter(e => !e.archived)
+  },
+
+  // ---------------------------------------------------------------------------
+  // ASSIGNMENTS
+  // ---------------------------------------------------------------------------
+
+  async getEnsembleAssignments(ensembleId) {
+    const { data, error } = await supabase
+      .from('assignments').select('*').eq('ensemble_id', ensembleId)
+      .order('due_date', { ascending: true })
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+
+  async createAssignment(assignmentData) {
+    const { ensemble_id, teacher_id, title, description, due_date } = assignmentData
+    const { data: assignment, error } = await supabase
+      .from('assignments').insert({ ensemble_id, teacher_id, title, description, due_date }).select().single()
+    if (error) throw new Error(error.message)
+
+    // Auto-create a task + submission for every current member
+    const members = await this.getEnsembleMembers(ensemble_id)
+    for (const member of members) {
+      const { data: task } = await supabase.from('practice_tasks').insert({
+        user_id: member.id, title, category: 'repertoire',
+        estimated_minutes: 30, assigned_by_teacher: true,
+      }).select().single()
+      if (task) {
+        await supabase.from('assignment_submissions').insert({
+          assignment_id: assignment.id, student_id: member.id, task_id: task.id,
+        })
+      }
+    }
+    return assignment
+  },
+
+  async deleteAssignment(assignmentId) {
+    const { error } = await supabase.from('assignments').delete().eq('id', assignmentId)
+    if (error) throw new Error(error.message)
+  },
+
+  async getAssignmentSubmissions(assignmentId) {
+    const { data, error } = await supabase
+      .from('assignment_submissions')
+      .select('*, profiles:student_id(id, name, instrument), practice_tasks:task_id(readiness_score, status, total_time_practiced)')
+      .eq('assignment_id', assignmentId)
+    if (error) throw new Error(error.message)
+    return (data || []).map(s => ({
+      ...s,
+      student: s.profiles,
+      readiness_score: s.practice_tasks?.readiness_score ?? 0,
+      status: s.practice_tasks?.status ?? 'not_started',
+      total_time_practiced: s.practice_tasks?.total_time_practiced ?? 0,
+    }))
+  },
+
+  async gradeSubmission(submissionId, grade, feedback) {
+    const { data, error } = await supabase
+      .from('assignment_submissions')
+      .update({ teacher_grade: grade, teacher_feedback: feedback, graded_at: new Date().toISOString() })
+      .eq('id', submissionId).select().single()
+    if (error) throw new Error(error.message)
+    return data
+  },
+
+  async getStudentAssignments(studentId) {
+    const { data, error } = await supabase
+      .from('assignment_submissions')
+      .select('*, assignments:assignment_id(id, title, description, due_date, ensemble_id, ensembles:ensemble_id(name)), practice_tasks:task_id(readiness_score, status)')
+      .eq('student_id', studentId)
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+
+  // ---------------------------------------------------------------------------
+  // CHALLENGES
+  // ---------------------------------------------------------------------------
+
+  async getTeacherChallenges(teacherId) {
+    const { data, error } = await supabase
+      .from('challenges')
+      .select('*, challenge_ensembles(ensemble_id, ensembles:ensemble_id(name))')
+      .eq('teacher_id', teacherId)
+      .order('end_date', { ascending: false })
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+
+  async createChallenge(challengeData, ensembleIds) {
+    const { teacher_id, title, type, target_minutes, start_date, end_date } = challengeData
+    const { data: challenge, error } = await supabase
+      .from('challenges').insert({ teacher_id, title, type, target_minutes, start_date, end_date })
+      .select().single()
+    if (error) throw new Error(error.message)
+    await supabase.from('challenge_ensembles').insert(
+      ensembleIds.map(ensemble_id => ({ challenge_id: challenge.id, ensemble_id }))
+    )
+    return challenge
+  },
+
+  async deleteChallenge(challengeId) {
+    const { error } = await supabase.from('challenges').delete().eq('id', challengeId)
+    if (error) throw new Error(error.message)
+  },
+
+  async getStudentChallenges(studentId) {
+    const { data, error } = await supabase
+      .from('challenge_ensembles')
+      .select('challenge_id, ensemble_id, challenges:challenge_id(*), ensembles:ensemble_id(name)')
+      .in('ensemble_id', (
+        await supabase.from('ensemble_members').select('ensemble_id').eq('student_id', studentId)
+      ).data?.map(r => r.ensemble_id) || [])
+    if (error) throw new Error(error.message)
+    return (data || []).map(r => ({ ...r.challenges, ensemble_name: r.ensembles?.name }))
+  },
+
+  async getChallengeLeaderboard(challengeId) {
+    // Get all ensembles in this challenge
+    const { data: ceRows } = await supabase
+      .from('challenge_ensembles')
+      .select('ensemble_id, ensembles:ensemble_id(name)')
+      .eq('challenge_id', challengeId)
+    const ensembleIds = (ceRows || []).map(r => r.ensemble_id)
+    const ensembleNames = Object.fromEntries((ceRows || []).map(r => [r.ensemble_id, r.ensembles?.name]))
+
+    // Get the challenge window
+    const { data: challenge } = await supabase
+      .from('challenges').select('*').eq('id', challengeId).single()
+    if (!challenge) return []
+
+    // Get all members across all ensembles
+    const { data: members } = await supabase
+      .from('ensemble_members')
+      .select('student_id, ensemble_id, profiles:student_id(id, name, instrument)')
+      .in('ensemble_id', ensembleIds)
+
+    if (!members?.length) return []
+
+    const studentIds = members.map(m => m.student_id)
+
+    // Get sessions in the challenge window
+    const { data: sessions } = await supabase
+      .from('practice_sessions')
+      .select('user_id, points_earned, duration_minutes')
+      .in('user_id', studentIds)
+      .gte('start_time', challenge.start_date)
+      .lte('start_time', challenge.end_date)
+
+    // Aggregate per student
+    const memberMap = {}
+    for (const m of members) {
+      memberMap[m.student_id] = {
+        ...m.profiles,
+        ensemble_id: m.ensemble_id,
+        ensemble_name: ensembleNames[m.ensemble_id],
+        xp_earned: 0,
+        minutes_practiced: 0,
+      }
+    }
+    for (const s of sessions || []) {
+      if (memberMap[s.user_id]) {
+        memberMap[s.user_id].xp_earned += s.points_earned
+        memberMap[s.user_id].minutes_practiced += s.duration_minutes
+      }
+    }
+
+    const students = Object.values(memberMap)
+    const metric = challenge.type === 'xp_sprint' ? 'xp_earned' : 'minutes_practiced'
+
+    if (ensembleIds.length === 1) {
+      // Individual leaderboard
+      return students.sort((a, b) => b[metric] - a[metric]).map((s, i) => ({ ...s, rank: i + 1 }))
+    }
+
+    // Class vs class — group by ensemble, compute avg
+    const ensembleStats = {}
+    for (const s of students) {
+      if (!ensembleStats[s.ensemble_id]) {
+        ensembleStats[s.ensemble_id] = { ensemble_id: s.ensemble_id, ensemble_name: s.ensemble_name, total: 0, count: 0, members: [] }
+      }
+      ensembleStats[s.ensemble_id].total += s[metric]
+      ensembleStats[s.ensemble_id].count++
+      ensembleStats[s.ensemble_id].members.push(s)
+    }
+    return Object.values(ensembleStats)
+      .map(e => ({ ...e, avg: e.count > 0 ? Math.round(e.total / e.count) : 0 }))
+      .sort((a, b) => b.avg - a.avg)
+      .map((e, i) => ({
+        ...e,
+        rank: i + 1,
+        members: e.members.sort((a, b) => b[metric] - a[metric]).map((s, j) => ({ ...s, rank: j + 1 })),
+      }))
+  },
 }
