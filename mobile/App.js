@@ -27,6 +27,7 @@ import ChallengeCreate from './src/components/ChallengeCreate'
 import ChallengeLeaderboard from './src/components/ChallengeLeaderboard'
 import StudentEnsembleView from './src/components/StudentEnsembleView'
 import TaskDetail from './src/components/TaskDetail'
+import PrivacyPolicy from './src/components/PrivacyPolicy'
 import Toast from './src/components/Toast'
 
 const Tab = createBottomTabNavigator()
@@ -156,6 +157,11 @@ function AppStack() {
         name="TaskDetail"
         component={TaskDetail}
         options={{ headerShown: true, title: 'Task', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="PrivacyPolicy"
+        component={PrivacyPolicy}
+        options={{ headerShown: true, title: 'Privacy Policy', headerTintColor: '#6366f1' }}
       />
     </Stack.Navigator>
   )

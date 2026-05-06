@@ -6,6 +6,33 @@ const CLAUDE_API_KEY = 'YOUR_CLAUDE_API_KEY_HERE'
 const API_URL = 'https://api.anthropic.com/v1/messages'
 const MODEL = 'claude-haiku-4-5-20251001' // fast + cost-effective for in-app use
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PRIVACY SANITIZATION
+// These are the ONLY fields from a task object that are ever allowed to leave
+// the device toward the Claude API. No user IDs, names, emails, or teacher
+// identifiers are included — even if a future caller accidentally passes a
+// full task/user object.
+// ─────────────────────────────────────────────────────────────────────────────
+function sanitizeTask(task) {
+  return {
+    title: task.title,                               // piece/task name only
+    category: task.category,                         // e.g. "repertoire"
+    estimated_minutes: task.estimated_minutes,
+    total_time_practiced: task.total_time_practiced,
+    due_date: task.due_date ?? null,
+    // Explicitly excluded: id, user_id, teacher_id, ensemble_id, status, created_at
+  }
+}
+
+// Strip note objects down to content + date only. The note ID and user_id
+// stay in the app and are never sent outbound.
+function sanitizeNotes(notes) {
+  return notes.map(n => ({
+    content: n.content,
+    date: new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  }))
+}
+
 async function callClaude(prompt, maxTokens = 400) {
   if (CLAUDE_API_KEY === 'YOUR_CLAUDE_API_KEY_HERE') {
     throw new Error('Paste your Claude API key into mobile/src/utils/ai.js')
@@ -69,31 +96,34 @@ Rules:
 // Claude reads practice notes, due date, and when the user typically practices
 // to produce both the message body and the exact send time.
 export async function getSmartReminderData(task, notes, recentSessionTimes) {
+  const t = sanitizeTask(task)
+  const n = sanitizeNotes(notes)
+
   const now = new Date()
   const nowStr = now.toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
     hour: 'numeric', minute: '2-digit',
   })
 
-  const dueLine = task.due_date
-    ? `Due: ${new Date(task.due_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`
+  const dueLine = t.due_date
+    ? `Due: ${new Date(t.due_date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`
     : 'No due date'
 
-  const minutesLeft = Math.max(0, (task.estimated_minutes || 30) - (task.total_time_practiced || 0))
+  const minutesLeft = Math.max(0, (t.estimated_minutes || 30) - (t.total_time_practiced || 0))
 
-  const notesSection = notes.length > 0
-    ? `Practice notes (newest first):\n${notes.map(n => `• ${n.content}`).join('\n')}`
+  const notesSection = n.length > 0
+    ? `Practice notes (newest first):\n${n.map(x => `• ${x.content}`).join('\n')}`
     : 'No practice notes yet.'
 
   const sessionsSection = recentSessionTimes.length > 0
-    ? `Recent session times (shows when they typically practice):\n${recentSessionTimes.map(t => `• ${t}`).join('\n')}`
+    ? `Recent session times (shows when they typically practice):\n${recentSessionTimes.map(x => `• ${x}`).join('\n')}`
     : 'No session history.'
 
   const prompt = `Right now: ${nowStr}
 
-Task: "${task.title}" (${(task.category || 'repertoire').replace('_', ' ')})
+Task: "${t.title}" (${(t.category || 'repertoire').replace('_', ' ')})
 ${dueLine}
-Practiced: ${task.total_time_practiced || 0} / ${task.estimated_minutes || 30} min (${minutesLeft} min remaining)
+Practiced: ${t.total_time_practiced || 0} / ${t.estimated_minutes || 30} min (${minutesLeft} min remaining)
 
 ${notesSection}
 
@@ -127,8 +157,9 @@ Return ONLY valid JSON, no markdown:
 
 // Generate a personalised coaching tip based on practice history + notes
 export async function getCoachingTip(taskTitle, practiceMinutes, notes) {
-  const notesSection = notes.length > 0
-    ? `Notes from past sessions:\n${notes.map(n => `• ${n.content}`).join('\n')}`
+  const n = sanitizeNotes(notes)
+  const notesSection = n.length > 0
+    ? `Notes from past sessions:\n${n.map(x => `• ${x.content}`).join('\n')}`
     : 'No practice notes yet.'
 
   const prompt = `You are a supportive, knowledgeable music coach. Write a short coaching tip (2-3 sentences) for this student's practice task.
