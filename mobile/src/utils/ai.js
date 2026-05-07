@@ -1,6 +1,7 @@
 // ─────────────────────────────────────────────────────────────
-// Paste your Claude API key here (get one at console.anthropic.com)
-const CLAUDE_API_KEY = 'YOUR_CLAUDE_API_KEY_HERE'
+// API key loaded from .env (EXPO_PUBLIC_ANTHROPIC_KEY=sk-ant-...)
+// Never hardcode the key here — keep it in mobile/.env (gitignored)
+const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_ANTHROPIC_KEY || ''
 // ─────────────────────────────────────────────────────────────
 
 const API_URL = 'https://api.anthropic.com/v1/messages'
