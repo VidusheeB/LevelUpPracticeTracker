@@ -334,15 +334,16 @@ export const db = {
     return data || null
   },
 
-  // ICS Calendar Sync — replace all ICS-sourced events for this user with fresh ones
-  async syncICSEvents(userId, icsUrl, events) {
-    // Remove all previous ICS events for this user
+  // Google Calendar Sync — replaces all Google-sourced events for this user.
+  // Pass events=null to clear (used on disconnect).
+  async syncGoogleCalendarEvents(userId, events) {
+    // Always clear existing Google events first
     await supabase.from('calendar_events')
       .delete()
       .eq('user_id', userId)
-      .eq('source', 'ics')
+      .eq('source', 'google')
 
-    if (events.length > 0) {
+    if (events && events.length > 0) {
       const { error } = await supabase.from('calendar_events').insert(
         events.map(e => ({
           user_id: userId,
@@ -351,19 +352,19 @@ export const db = {
           date: e.date,
           event_time: e.time || '09:00',
           type: 'other',
-          source: 'ics',
+          source: 'google',
         }))
       )
       if (error) throw new Error(error.message)
     }
 
-    // Store the URL + last synced timestamp on the profile
-    const { error: profileError } = await supabase.from('profiles')
-      .update({ ics_url: icsUrl, ics_last_synced: new Date().toISOString() })
-      .eq('id', userId)
-    if (profileError) throw new Error(profileError.message)
+    // Update profile: connected flag + last synced time
+    await supabase.from('profiles').update({
+      google_calendar_connected: !!(events && events.length >= 0),
+      google_calendar_synced_at: events ? new Date().toISOString() : null,
+    }).eq('id', userId)
 
-    return events.length
+    return events ? events.length : 0
   },
 
   // Push Tokens — one row per device, upserted on every login

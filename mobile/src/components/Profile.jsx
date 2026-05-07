@@ -1,11 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { useState } from 'react'
 import { useNavigation } from '@react-navigation/native'
 import { useApp } from '../contexts/AppContext'
-import { fetchAndParseICS } from '../utils/ics'
+import GoogleCalendarConnect from './GoogleCalendarConnect'
 
 export default function Profile() {
-  const { user, logout, joinTeacher, updateProfile, syncCalendar, setToast } = useApp()
+  const { user, logout, joinTeacher, updateProfile, setToast } = useApp()
   const navigation = useNavigation()
 
   const [teacherCode, setTeacherCode] = useState('')
@@ -17,12 +17,6 @@ export default function Profile() {
   const [editingGoal, setEditingGoal] = useState(false)
   const [goalValue, setGoalValue] = useState(String(user?.weekly_goal_minutes ?? 120))
   const [savingProfile, setSavingProfile] = useState(false)
-
-  // ICS calendar sync
-  const [icsUrl, setIcsUrl] = useState(user?.ics_url || '')
-  const [syncing, setSyncing] = useState(false)
-  const [syncStatus, setSyncStatus] = useState(null) // null | 'success' | 'error'
-  const [syncMessage, setSyncMessage] = useState('')
 
   const handleJoinTeacher = async () => {
     if (teacherCode.trim().length !== 6) { setToast('Enter the 6-digit code from your teacher', 'error'); return }
@@ -70,22 +64,6 @@ export default function Profile() {
       setToast(err.message, 'error')
     } finally {
       setSavingProfile(false)
-    }
-  }
-
-  const handleSyncCalendar = async () => {
-    if (!icsUrl.trim()) { setToast('Paste your Google Calendar ICS link first', 'error'); return }
-    setSyncing(true)
-    setSyncStatus(null)
-    try {
-      const count = await syncCalendar(icsUrl.trim())
-      setSyncStatus('success')
-      setSyncMessage(`Synced ${count} upcoming event${count !== 1 ? 's' : ''}`)
-    } catch (err) {
-      setSyncStatus('error')
-      setSyncMessage(err.message)
-    } finally {
-      setSyncing(false)
     }
   }
 
@@ -199,58 +177,8 @@ export default function Profile() {
         )}
       </View>
 
-      {/* Google Calendar sync */}
-      <View className="bg-white rounded-2xl p-4 shadow-sm gap-3">
-        <View className="flex-row items-center gap-2">
-          <Text style={{ fontSize: 22 }}>📅</Text>
-          <View className="flex-1">
-            <Text className="font-semibold text-gray-900">Google Calendar</Text>
-            <Text className="text-xs text-gray-400">Claude reads your events to tailor practice plans</Text>
-          </View>
-        </View>
-
-        <Text className="text-xs text-gray-500 leading-relaxed">
-          In Google Calendar: Settings → your calendar → "Secret address in iCal format" → copy the link
-        </Text>
-
-        <TextInput
-          className="border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 bg-gray-50"
-          value={icsUrl}
-          onChangeText={setIcsUrl}
-          placeholder="https://calendar.google.com/calendar/ical/..."
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
-        />
-
-        {syncStatus === 'success' && (
-          <View className="flex-row items-center gap-2 bg-green-50 rounded-xl px-3 py-2">
-            <Text className="text-green-600 text-sm">✓ {syncMessage}</Text>
-          </View>
-        )}
-        {syncStatus === 'error' && (
-          <View className="bg-red-50 rounded-xl px-3 py-2">
-            <Text className="text-red-600 text-sm">{syncMessage}</Text>
-          </View>
-        )}
-
-        <TouchableOpacity
-          onPress={handleSyncCalendar}
-          disabled={syncing || !icsUrl.trim()}
-          className={`py-3 rounded-xl items-center flex-row justify-center gap-2 ${syncing || !icsUrl.trim() ? 'bg-gray-100' : 'bg-indigo-500'}`}
-        >
-          {syncing && <ActivityIndicator size="small" color="#9ca3af" />}
-          <Text className={`font-medium text-sm ${syncing || !icsUrl.trim() ? 'text-gray-400' : 'text-white'}`}>
-            {syncing ? 'Syncing...' : user?.ics_last_synced ? 'Re-sync Calendar' : 'Sync Calendar'}
-          </Text>
-        </TouchableOpacity>
-
-        {user?.ics_last_synced && (
-          <Text className="text-xs text-gray-400 text-center">
-            Last synced {new Date(user.ics_last_synced).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-          </Text>
-        )}
-      </View>
+      {/* Google Calendar OAuth */}
+      <GoogleCalendarConnect />
 
       {/* Teacher section */}
       {user?.role === 'teacher' ? (

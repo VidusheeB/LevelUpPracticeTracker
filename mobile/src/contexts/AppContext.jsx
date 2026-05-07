@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { auth, db } from '../utils/supabase'
 import { registerPushToken } from '../utils/notifications'
-import { fetchAndParseICS } from '../utils/ics'
+import { fetchGoogleCalendarEvents } from '../utils/googleAuth'
 
 const AppContext = createContext(null)
 
@@ -178,11 +178,15 @@ export function AppProvider({ children }) {
     }
   }, [user])
 
-  const syncCalendar = useCallback(async (icsUrl) => {
-    const events = await fetchAndParseICS(icsUrl)
-    const count = await db.syncICSEvents(user.id, icsUrl, events)
-    // Refresh user so ics_last_synced shows in Profile
-    setUser(prev => ({ ...prev, ics_url: icsUrl, ics_last_synced: new Date().toISOString() }))
+  // accessToken=null means disconnect (clears events from DB)
+  const syncGoogleCalendar = useCallback(async (accessToken) => {
+    const events = accessToken ? await fetchGoogleCalendarEvents(accessToken) : null
+    const count = await db.syncGoogleCalendarEvents(user.id, events)
+    setUser(prev => ({
+      ...prev,
+      google_calendar_connected: accessToken !== null,
+      google_calendar_synced_at: accessToken ? new Date().toISOString() : null,
+    }))
     return count
   }, [user])
 
@@ -234,7 +238,7 @@ export function AppProvider({ children }) {
       user, stats, tasks, loading, toast,
       login, register, logout, loadUserData,
       refreshStats, refreshTasks,
-      updateProfile, syncCalendar,
+      updateProfile, syncGoogleCalendar,
       joinTeacher,
       createEnsemble, archiveEnsemble, deleteEnsemble,
       createChallenge, createAssignment,
