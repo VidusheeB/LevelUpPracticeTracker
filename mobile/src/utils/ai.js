@@ -155,6 +155,37 @@ Return ONLY valid JSON, no markdown:
   return result
 }
 
+// Generate the pre-session intention question.
+// Asks a forward-looking question grounded in the student's actual tasks
+// and recent logs — not "how do you feel?" but "what specifically are you targeting?"
+export async function getPreSessionQuestion(tasks, recentLogs) {
+  const taskContext = tasks.slice(0, 5).map(t => {
+    const note = t.recentNote ? `, last note: "${t.recentNote}"` : ''
+    return `• ${t.title} — ${t.readiness_score || 0}% ready${note}`
+  }).join('\n')
+
+  const logContext = recentLogs.slice(0, 3).map(l => {
+    const answers = (l.entries || []).map(e => e.a).filter(Boolean).join('; ')
+    return `• ${new Date(l.created_at).toLocaleDateString()}: mood ${l.mood_score}/5 — ${answers}`
+  }).join('\n') || 'No recent logs.'
+
+  const prompt = `A music student is about to start a practice session. Generate ONE short intention-setting question (1 sentence) to focus their mind before they begin.
+
+Their tasks:
+${taskContext || 'No tasks yet.'}
+
+Recent check-in history:
+${logContext}
+
+Rules:
+- Reference a SPECIFIC piece or passage they need to work on — never ask generically
+- Frame it as an intention or goal for this session, not a reflection
+- Examples of GOOD questions: "Which bars of the Donnelly B section are you targeting today?" / "Autumn Leaves is at 62% — what specifically do you want to lock in today?"
+- Return ONLY the question, no preamble.`
+
+  return callClaude(prompt, 100)
+}
+
 // Generate the quick post-session follow-up question.
 // Claude reads actual task notes and previous log entries to ask something
 // specific — never generic. Returns a single question string.

@@ -334,6 +334,38 @@ export const db = {
     return data || null
   },
 
+  // ICS Calendar Sync — replace all ICS-sourced events for this user with fresh ones
+  async syncICSEvents(userId, icsUrl, events) {
+    // Remove all previous ICS events for this user
+    await supabase.from('calendar_events')
+      .delete()
+      .eq('user_id', userId)
+      .eq('source', 'ics')
+
+    if (events.length > 0) {
+      const { error } = await supabase.from('calendar_events').insert(
+        events.map(e => ({
+          user_id: userId,
+          created_by: userId,
+          title: e.title,
+          date: e.date,
+          event_time: e.time || '09:00',
+          type: 'other',
+          source: 'ics',
+        }))
+      )
+      if (error) throw new Error(error.message)
+    }
+
+    // Store the URL + last synced timestamp on the profile
+    const { error: profileError } = await supabase.from('profiles')
+      .update({ ics_url: icsUrl, ics_last_synced: new Date().toISOString() })
+      .eq('id', userId)
+    if (profileError) throw new Error(profileError.message)
+
+    return events.length
+  },
+
   // Push Tokens — one row per device, upserted on every login
   async savePushToken(userId, token, platform) {
     const { error } = await supabase

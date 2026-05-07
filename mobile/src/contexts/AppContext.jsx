@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { auth, db } from '../utils/supabase'
 import { registerPushToken } from '../utils/notifications'
+import { fetchAndParseICS } from '../utils/ics'
 
 const AppContext = createContext(null)
 
@@ -166,6 +167,25 @@ export function AppProvider({ children }) {
     return assignment
   }, [user])
 
+  const updateProfile = useCallback(async (updates) => {
+    try {
+      const updated = await db.updateProfile(user.id, updates)
+      setUser(prev => ({ ...prev, ...updated }))
+      return updated
+    } catch (error) {
+      setToastFn(error.message, 'error')
+      throw error
+    }
+  }, [user])
+
+  const syncCalendar = useCallback(async (icsUrl) => {
+    const events = await fetchAndParseICS(icsUrl)
+    const count = await db.syncICSEvents(user.id, icsUrl, events)
+    // Refresh user so ics_last_synced shows in Profile
+    setUser(prev => ({ ...prev, ics_url: icsUrl, ics_last_synced: new Date().toISOString() }))
+    return count
+  }, [user])
+
   const joinTeacher = useCallback(async (code) => {
     const teacher = await db.getTeacherByCode(code)
     if (!teacher) throw new Error('Teacher code not found. Double-check the code and try again.')
@@ -214,6 +234,7 @@ export function AppProvider({ children }) {
       user, stats, tasks, loading, toast,
       login, register, logout, loadUserData,
       refreshStats, refreshTasks,
+      updateProfile, syncCalendar,
       joinTeacher,
       createEnsemble, archiveEnsemble, deleteEnsemble,
       createChallenge, createAssignment,
