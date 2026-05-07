@@ -113,7 +113,37 @@ ALTER TABLE mood_logs ADD CONSTRAINT mood_logs_type_check
 
 ---
 
-## What we discussed but haven't built yet
+## Ideas from Vidushee (capture these, don't lose them)
+
+- **Mood check-in should feel like a conversation**, not a form. Claude prompts questions one at a time — "how are you feeling?", emoji scale, then "name two things you're grateful for", "anything frustrating you?", "what are your goals this week?" — not a static survey.
+- **Recommendations must be hyper-specific**, not vague. Not "play something easy". Instead: "spend 10 min on bars 9–16 of the Donnelly B section at 60% tempo — that's the passage your notes say is slipping." Grounded in actual research (Ericsson deliberate practice, cognitive load theory, interleaved vs blocked practice, spaced retrieval, Pomodoro for high-stress periods).
+- **Google Calendar context** makes recommendations much smarter — if Claude sees "AP Biology exam tomorrow", it recommends a short targeted session instead of a full drill. This is why OAuth matters.
+- **Notebook** should be closer to Google Docs than a text field. Rich text, hyperlinks. AI generates a table of contents. Toggle: "let AI read my notebook" → Claude uses it as extra coaching context.
+- **AI Chat screen** — student types "I've been playing these big band charts, recommend similar ones" and Claude knows their full history (tasks, notes, ensemble, mood). Not a generic chatbot — fully context-loaded.
+- **UI redesign** — Vidushee sketched: left sidebar nav (vs current bottom tabs), split-pane with activity feed on the right, progress bar at bottom showing hrs / XP / completed this week. "Positive message" card + "How r u feeling" button on the home activity panel.
+- **The most differentiated feature in the music ed space** is the evidence-based practice method recommendations. Nothing else does this. Lean into it.
+
+---
+
+## Session log (newest first)
+
+### Session: continue-app-development
+- Built ICS calendar import (later replaced with Google OAuth)
+- Built `PreSessionCheckIn` — mood + Claude intention question shown before timer starts
+- Built `GoogleCalendarConnect` — full OAuth flow, token refresh, disconnect
+- Replaced ICS copy-paste with Google sign-in sheet
+- Added editable display name + weekly goal to Profile
+- Updated `app.json` with bundle ID (`com.practicebeats.app`), scheme (`practicebeats`)
+- Installed `expo-auth-session`, `expo-web-browser`, `expo-secure-store`, `expo-crypto`
+- Created `TODO.md` and `CLAUDE.md` for persistent context
+- Agreed: CLAUDE.md gets updated every session with decisions, ideas, and progress
+
+### Session: document-app-components (prior session)
+- Built full Mindful Practice layer: `MindfulCheckIn` (post-session), `DeepCheckIn` (weekly), `TodayRecommendation` (evidence-based plan)
+- All AI functions in `ai.js`: `getPreSessionQuestion`, `getQuickFollowUp`, `getDeepCheckInQuestions`, `getPracticeRecommendation`, `getCoachingTip`, `getSmartReminderData`
+- Discussed Notebook, AI Chat, avatar builder, UI redesign — all deferred to future sessions
+- Decided on two mood modes: quick (every session, ~60s) and deep (weekly, Claude-generated questions)
+
 
 See `TODO.md` for the full list. Top priorities from previous conversations:
 
