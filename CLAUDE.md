@@ -4,6 +4,34 @@
 
 ---
 
+## FIRST TIME SETUP (VS Code / new machine)
+
+If this is a fresh clone, do these steps before anything else:
+
+```bash
+cd mobile
+npm install
+```
+
+Then create `mobile/.env` with your Claude API key:
+```
+EXPO_PUBLIC_ANTHROPIC_KEY=sk-ant-your-key-here
+```
+
+To run the app:
+```bash
+npx expo start
+```
+
+Scan the QR code with the Expo Go app on your phone (iOS or Android).
+
+**Still needs setup (manual steps):**
+- [ ] Paste real Claude API key into `mobile/.env`
+- [ ] Set Google Cloud OAuth client IDs in `mobile/src/utils/googleAuth.js` (top of file, 3 constants)
+- [ ] Run SQL in Supabase for notebook (see TODO.md — `notebook_entries` table + `ai_read_notebook` column)
+
+---
+
 ## What this app is
 
 **PracticeBeats** — a music practice tracker for ensemble musicians (students + teachers).
@@ -38,10 +66,11 @@ mobile/
     components/                   # All screens and UI components
     contexts/AppContext.jsx        # Global state: user, tasks, auth, actions
     utils/
-      ai.js                       # All Claude API calls (parseTask, recommendations, check-ins)
+      ai.js                       # All Claude API calls — key loaded from .env
       supabase.js                  # All DB operations + business logic (XP, streaks, readiness)
       googleAuth.js               # Google OAuth token management + Calendar API fetch
       notifications.js            # Expo push token + local notification scheduling
+  .env                            # GITIGNORED — paste Claude API key here
   app.json                        # Bundle ID: com.practicebeats.app, scheme: practicebeats
 supabase/
   functions/deliver-notifications/ # Edge Function: reads scheduled_notifications, sends via Expo
@@ -58,10 +87,12 @@ CLAUDE.md                         # This file
 - All DB operations go through `mobile/src/utils/supabase.js` — the `db` export.
 
 ### Tables (all with RLS enabled)
-`profiles`, `practice_tasks`, `practice_sessions`, `session_tasks`, `badges`, `notes`, `ensembles`, `ensemble_members`, `assignments`, `assignment_submissions`, `challenges`, `challenge_ensembles`, `calendar_events`, `task_notes`, `mood_logs`, `push_tokens`, `scheduled_notifications`
+`profiles`, `practice_tasks`, `practice_sessions`, `session_tasks`, `badges`, `notes`, `ensembles`, `ensemble_members`, `assignments`, `assignment_submissions`, `challenges`, `challenge_ensembles`, `calendar_events`, `task_notes`, `mood_logs`, `push_tokens`, `scheduled_notifications`, `notebook_entries`
 
 ### SQL status
-All migrations confirmed run ✅ — all tables, columns, RLS policies, and extensions are live.
+All migrations confirmed run ✅ except:
+- `notebook_entries` table — see TODO.md for exact SQL
+- `ai_read_notebook` column on `profiles` — see TODO.md for exact SQL
 
 ---
 
@@ -69,7 +100,7 @@ All migrations confirmed run ✅ — all tables, columns, RLS policies, and exte
 
 - **No FastAPI** — all business logic (XP calc, streak, readiness score) lives client-side in `supabase.js`. Supabase RLS enforces security.
 - **Privacy layer** — `sanitizeTask()` and `sanitizeNotes()` in `ai.js` are an explicit allowlist. No user IDs, names, emails, or teacher identifiers ever leave the device toward Anthropic. Don't remove this.
-- **Claude API key** — stored as a plaintext constant at the top of `ai.js`. User needs to paste their own key. This is intentional for a student-built app.
+- **Claude API key** — loaded from `mobile/.env` as `EXPO_PUBLIC_ANTHROPIC_KEY`. Never hardcode in source. File is gitignored.
 - **Google OAuth tokens** — stored in `expo-secure-store` (device-only), NOT in Supabase. `google_calendar_connected` bool on profile is just a display flag.
 - **Mood logs** — three types: `quick` (post-session, ~60s), `deep` (weekly reflection, 5-6 Claude questions), `pre_session` (before timer starts, mood + Claude intention question).
 - **Calendar events** — `source` column: `manual` (user added), `google` (OAuth sync), `ensemble` (teacher pushed to class).
@@ -84,9 +115,11 @@ All migrations confirmed run ✅ — all tables, columns, RLS policies, and exte
 | `getPreSessionQuestion(tasks, logs)` | Before practice | Specific intention question |
 | `getQuickFollowUp(session, tasks, logs)` | After practice | Specific reflection question |
 | `getDeepCheckInQuestions(tasks, logs, events)` | Weekly check-in | 5-6 personalised survey questions |
-| `getPracticeRecommendation(tasks, logs, events, sessions)` | Dashboard | Evidence-based plan (method + specific bars + duration) |
+| `getPracticeRecommendation(tasks, logs, events, sessions, notebookEntries?)` | Dashboard | Evidence-based plan (method + specific bars + duration) |
 | `getCoachingTip(title, minutes, notes)` | Task Detail | 2-3 sentence coaching tip |
 | `getSmartReminderData(task, notes, times)` | Task notifications | Message text + optimal send time |
+| `buildNotebookContext(entries)` | Internal | Sanitizes notebook entries for prompt inclusion |
+| `getNotebookTableOfContents(entries)` | Notebook screen | AI-generated TOC grouped by theme/time |
 
 ---
 
@@ -94,7 +127,7 @@ All migrations confirmed run ✅ — all tables, columns, RLS policies, and exte
 
 **Bottom tabs**: Home (Dashboard) · Calendar · Practice (timer, centre FAB) · Tasks or Classes (role-dependent) · Profile
 
-**Stack screens**: Achievements · Messages · EnsembleDetail · AssignmentCreate · AssignmentDetail · ChallengeCreate · ChallengeLeaderboard · StudentEnsembleView · AllStudents (TeacherDashboard) · TaskDetail · PrivacyPolicy · DeepCheckIn (Weekly Reflection)
+**Stack screens**: Achievements · Messages · EnsembleDetail · AssignmentCreate · AssignmentDetail · ChallengeCreate · ChallengeLeaderboard · StudentEnsembleView · AllStudents (TeacherDashboard) · TaskDetail · PrivacyPolicy · DeepCheckIn (Weekly Reflection) · Notebook · NotebookEditor
 
 ---
 
@@ -115,10 +148,40 @@ All migrations confirmed run ✅ — all tables, columns, RLS policies, and exte
 - **AI Chat screen** — student types "I've been playing these big band charts, recommend similar ones" and Claude knows their full history (tasks, notes, ensemble, mood). Not a generic chatbot — fully context-loaded.
 - **UI redesign** — Vidushee sketched: left sidebar nav (vs current bottom tabs), split-pane with activity feed on the right, progress bar at bottom showing hrs / XP / completed this week. "Positive message" card + "How r u feeling" button on the home activity panel.
 - **The most differentiated feature in the music ed space** is the evidence-based practice method recommendations. Nothing else does this. Lean into it.
+- **API cost**: using Claude Haiku 4.5 — ~$0.80/1M input tokens, plenty for demo on $5 credit. Could upgrade just `getPracticeRecommendation` to Sonnet if output feels generic (one-line change in ai.js).
+
+---
+
+## What's fully built ✅
+
+- Email + password auth, teacher / student / personal roles
+- Teacher 6-digit code, student joins via code, session persistence
+- Dashboard: weekly goal ring, streak, XP/level, challenge banners, task preview, AI practice plan, quick action buttons
+- Practice timer: focus/progress/energy ratings, XP calc, streak + badge awarding
+- Pre-session check-in: mood + Claude intention question before timer starts
+- Tasks: filter tabs, manual create, Smart Add (Claude structures natural language), Task Detail, readiness bar
+- Practice notes (per-task AI memory), AI coaching tip, smart notifications (Claude picks message + send time)
+- Calendar: month grid, dot indicators, personal + class events, assignment due dates, day-before reminders
+- Google Calendar OAuth: connect via Google sign-in, syncs 90 days of events, auto-refresh tokens, disconnect
+- Classes (teacher): create/archive/delete, add/remove students, roster
+- Assignments: create → auto-task per student, readiness tracking, grade + feedback
+- Challenges: XP sprint + minutes types, individual + class-vs-class leaderboards
+- Mindful Practice layer: pre-session check-in (mood + Claude intention), post-session quick reflection, weekly deep check-in (Claude generates personalised 5-6 question survey)
+- Today's Practice Plan: evidence-based recommendation (deliberate practice, spaced retrieval, Pomodoro, cognitive load) — specific task, bars, method, duration
+- Profile: editable name, editable weekly goal, Google Calendar connect section, teacher code, achievements link, notebook link
+- Messaging: teacher ↔ student text notes
+- Achievements: 8 badge types
+- Privacy Policy screen + AI data sanitisation layer (allowlist, no PII to Anthropic)
+- Push notification infrastructure: Expo token registration + Supabase Edge Function `deliver-notifications` (needs deployment)
+- **Notebook**: entry list + search, autosave editor, tag chips (Reflection/Lesson Note/Music Writing/Technique/Repertoire/General), AI Table of Contents, "Let Claude read" toggle, post-session reflection prompt
 
 ---
 
 ## Session log (newest first)
+
+### Session: VS Code setup
+- Updated CLAUDE.md with first-time setup instructions for VS Code
+- Claude API key now loaded from `mobile/.env` (gitignored) via `EXPO_PUBLIC_ANTHROPIC_KEY`
 
 ### Session: continue-app-development (continued)
 - **Built Notebook feature** — fully integrated:
@@ -131,7 +194,7 @@ All migrations confirmed run ✅ — all tables, columns, RLS policies, and exte
   - `PracticeSession.jsx` — post-session complete screen now has "Write Reflection" button linking to `NotebookEditor` with `sessionId`
   - `Profile.jsx` — added "My Notebook" link in quick links section
   - `TodayRecommendation.jsx` — fetches notebook entries when `user.ai_read_notebook` is true and passes to recommendation
-- **SQL needed** (not yet run): `notebook_entries` table + `ai_read_notebook` column on profiles (see TODO.md)
+- SQL for `notebook_entries` and `ai_read_notebook` still needs to be run in Supabase (see TODO.md)
 
 ### Session: continue-app-development
 - Built ICS calendar import (later replaced with Google OAuth)
@@ -150,13 +213,14 @@ All migrations confirmed run ✅ — all tables, columns, RLS policies, and exte
 - Discussed Notebook, AI Chat, avatar builder, UI redesign — all deferred to future sessions
 - Decided on two mood modes: quick (every session, ~60s) and deep (weekly, Claude-generated questions)
 
+---
 
-See `TODO.md` for the full list. Top priorities from previous conversations:
+## Next priorities (pick up here)
 
-1. **Notebook** — free-form journaling with AI table of contents + "let AI read" toggle. Closest to Google Docs, not a text field.
-2. **AI Chat screen** — freeform chat where Claude has full context (tasks, notes, mood logs, ensemble)
-3. **Server-side push notifications** — Edge Function exists (`supabase/functions/deliver-notifications/index.ts`) but hasn't been deployed yet. Needs `npx supabase functions deploy deliver-notifications --project-ref yqcwvpwzykawwndbyakw` from inside the repo.
-4. **UI redesign** — user sketched left sidebar nav, split-pane layout, activity feed on right, progress bar at bottom. Not started.
+1. **AI Chat screen** — freeform chat where Claude has full app context (tasks, notes, mood logs, ensemble history, notebook). Not a generic chatbot.
+2. **Server-side push notifications** — Edge Function exists at `supabase/functions/deliver-notifications/index.ts` but not deployed. Run: `npx supabase functions deploy deliver-notifications --project-ref yqcwvpwzykawwndbyakw`
+3. **UI redesign** — left sidebar nav, split-pane layout, activity feed on right, progress bar at bottom (hrs/XP/completed this week)
+4. **Image attachments in messaging** — teacher ↔ student photo support
 
 ---
 
