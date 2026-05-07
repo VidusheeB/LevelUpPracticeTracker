@@ -271,7 +271,10 @@ export default function TaskDetail() {
       {/* Actions */}
       <View className="mx-4 mt-6 gap-3">
         <TouchableOpacity
-          onPress={() => navigation.navigate('Practice', { selectedTask: task.id })}
+          onPress={() => navigation.navigate('Main', {
+            screen: 'Practice',
+            params: { selectedTask: task.id },
+          })}
           className="bg-indigo-500 rounded-2xl py-4 items-center flex-row justify-center gap-2"
         >
           <Text className="text-white text-lg">▶</Text>

@@ -9,6 +9,7 @@ import TodayRecommendation from './TodayRecommendation'
 export default function Dashboard() {
   const navigation = useNavigation()
   const { user, stats, tasks, setToast, loadUserData } = useApp()
+  const tasksTabName = user?.role === 'teacher' ? 'Classes' : 'Tasks'
 
   const [showGoalEditor, setShowGoalEditor] = useState(false)
   const [editingGoal, setEditingGoal] = useState(null)
@@ -178,7 +179,7 @@ export default function Dashboard() {
       <View>
         <View className="flex-row items-center justify-between mb-3">
           <Text className="text-lg font-semibold text-gray-900">Today's Practice</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Tasks')}>
+          <TouchableOpacity onPress={() => navigation.navigate(tasksTabName)}>
             <Text className="text-sm text-indigo-500 font-medium">View All →</Text>
           </TouchableOpacity>
         </View>
@@ -193,8 +194,8 @@ export default function Dashboard() {
           <View className="bg-white rounded-2xl p-8 items-center shadow-sm">
             <Text className="text-4xl mb-2">🎉</Text>
             <Text className="text-gray-500">All tasks ready! Great work!</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Tasks')} className="mt-4 px-4 py-2 bg-gray-100 rounded-xl">
-              <Text className="font-medium text-gray-700">Add New Task</Text>
+            <TouchableOpacity onPress={() => navigation.navigate(tasksTabName)} className="mt-4 px-4 py-2 bg-gray-100 rounded-xl">
+              <Text className="font-medium text-gray-700">{user?.role === 'teacher' ? 'View Classes' : 'Add New Task'}</Text>
             </TouchableOpacity>
           </View>
         )}

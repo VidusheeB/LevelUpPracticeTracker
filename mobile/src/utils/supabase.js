@@ -219,21 +219,32 @@ export const db = {
 
     // Save session-task breakdown + update each task
     if (tasks?.length) {
-      await supabase.from('session_tasks').insert(
+      const { error: sessionTasksError } = await supabase.from('session_tasks').insert(
         tasks.map(t => ({ session_id: session.id, task_id: t.task_id, minutes_spent: t.minutes_spent }))
       )
-      for (const t of tasks) {
-        const { data: task } = await supabase
-          .from('practice_tasks').select('*').eq('id', t.task_id).single()
+      if (sessionTasksError) throw new Error(sessionTasksError.message)
+
+      const taskIds = tasks.map(t => t.task_id)
+      const { data: taskRows, error: tasksError } = await supabase
+        .from('practice_tasks')
+        .select('*')
+        .in('id', taskIds)
+      if (tasksError) throw new Error(tasksError.message)
+
+      const taskById = new Map((taskRows || []).map(task => [task.id, task]))
+      const practicedAt = new Date().toISOString()
+      await Promise.all(tasks.map(async (t) => {
+        const task = taskById.get(t.task_id)
         if (task) {
           const updates = calculateReadiness(task, t.minutes_spent, fields.focus_rating)
-          await supabase.from('practice_tasks').update({
+          const { error: updateError } = await supabase.from('practice_tasks').update({
             ...updates,
             total_time_practiced: (task.total_time_practiced || 0) + t.minutes_spent,
-            last_practiced_date: new Date().toISOString(),
+            last_practiced_date: practicedAt,
           }).eq('id', t.task_id)
+          if (updateError) throw new Error(updateError.message)
         }
-      }
+      }))
     }
 
     // Update profile: streak, points, level
@@ -271,11 +282,19 @@ export const db = {
   },
 
   // Calendar Events
-  async getCalendarEvents(userId) {
-    // Fetch user's ensemble memberships for OR filter
-    const { data: memberRows } = await supabase
-      .from('ensemble_members').select('ensemble_id').eq('student_id', userId)
-    const ensembleIds = (memberRows || []).map(r => r.ensemble_id)
+  async getCalendarEvents(userId, options = {}) {
+    const {
+      startDate = null,
+      endDate = null,
+      includeEnsembleEvents = true,
+    } = options
+    let ensembleIds = []
+    if (includeEnsembleEvents) {
+      const { data: memberRows, error: memberError } = await supabase
+        .from('ensemble_members').select('ensemble_id').eq('student_id', userId)
+      if (memberError) throw new Error(memberError.message)
+      ensembleIds = (memberRows || []).map(r => r.ensemble_id)
+    }
 
     let query = supabase
       .from('calendar_events')
@@ -287,6 +306,8 @@ export const db = {
       orParts.push(`ensemble_id.in.(${ensembleIds.join(',')})`)
     }
     query = query.or(orParts.join(','))
+    if (startDate) query = query.gte('date', startDate)
+    if (endDate) query = query.lte('date', `${endDate}T23:59:59`)
 
     const { data, error } = await query
     if (error) throw new Error(error.message)
@@ -381,7 +402,7 @@ export const db = {
           title: e.title,
           date: e.date,
           event_time: e.time || '09:00',
-          type: 'other',
+          event_type: 'other',
           source: 'google',
         }))
       )

@@ -58,6 +58,7 @@ export default function Notebook() {
   }
 
   const handleToggleAIRead = async (value) => {
+    const previousValue = aiReadEnabled
     setAIReadEnabled(value)
     try {
       await updateProfile({ ai_read_notebook: value })
@@ -65,7 +66,10 @@ export default function Notebook() {
         value ? 'Claude will now read your notebook for coaching context' : 'Notebook hidden from Claude',
         'success'
       )
-    } catch {}
+    } catch (err) {
+      setAIReadEnabled(previousValue)
+      setToast(err.message || 'Failed to update notebook privacy', 'error')
+    }
   }
 
   const handleGenerateTOC = async () => {

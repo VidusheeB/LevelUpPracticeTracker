@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react'
 import { auth, db } from '../utils/supabase'
 import { registerPushToken } from '../utils/notifications'
 import { fetchGoogleCalendarEvents } from '../utils/googleAuth'
@@ -85,7 +85,7 @@ export function AppProvider({ children }) {
     } catch (error) {
       console.error('Failed to refresh stats:', error)
     }
-  }, [user])
+  }, [user?.id])
 
   const refreshTasks = useCallback(async () => {
     if (!user?.id) return
@@ -95,7 +95,7 @@ export function AppProvider({ children }) {
     } catch (error) {
       console.error('Failed to refresh tasks:', error)
     }
-  }, [user])
+  }, [user?.id])
 
   // ---------------------------------------------------------------------------
   // TASKS
@@ -111,7 +111,7 @@ export function AppProvider({ children }) {
       setToastFn(error.message, 'error')
       throw error
     }
-  }, [user])
+  }, [user?.id])
 
   const updateTask = useCallback(async (taskId, updates) => {
     try {
@@ -143,7 +143,7 @@ export function AppProvider({ children }) {
     const ensemble = await db.createEnsemble(user.id, name, description)
     setToastFn(`${name} created!`, 'success')
     return ensemble
-  }, [user])
+  }, [user?.id])
 
   const archiveEnsemble = useCallback(async (ensembleId, archived) => {
     await db.updateEnsemble(ensembleId, { archived })
@@ -159,13 +159,13 @@ export function AppProvider({ children }) {
     const challenge = await db.createChallenge({ ...challengeData, teacher_id: user.id }, ensembleIds)
     setToastFn('Challenge started!', 'success')
     return challenge
-  }, [user])
+  }, [user?.id])
 
   const createAssignment = useCallback(async (assignmentData) => {
     const assignment = await db.createAssignment({ ...assignmentData, teacher_id: user.id })
     setToastFn('Assignment created!', 'success')
     return assignment
-  }, [user])
+  }, [user?.id])
 
   const updateProfile = useCallback(async (updates) => {
     try {
@@ -176,7 +176,7 @@ export function AppProvider({ children }) {
       setToastFn(error.message, 'error')
       throw error
     }
-  }, [user])
+  }, [user?.id])
 
   // accessToken=null means disconnect (clears events from DB)
   const syncGoogleCalendar = useCallback(async (accessToken) => {
@@ -188,7 +188,7 @@ export function AppProvider({ children }) {
       google_calendar_synced_at: accessToken ? new Date().toISOString() : null,
     }))
     return count
-  }, [user])
+  }, [user?.id])
 
   const joinTeacher = useCallback(async (code) => {
     const teacher = await db.getTeacherByCode(code)
@@ -196,7 +196,7 @@ export function AppProvider({ children }) {
     await db.updateProfile(user.id, { teacher_id: teacher.id })
     await refreshStats()
     setToastFn(`Joined ${teacher.name}'s class!`, 'success')
-  }, [user, refreshStats])
+  }, [user?.id, refreshStats])
 
   // ---------------------------------------------------------------------------
   // SESSIONS
@@ -233,8 +233,7 @@ export function AppProvider({ children }) {
     setToastState(null)
   }, [])
 
-  return (
-    <AppContext.Provider value={{
+  const value = useMemo(() => ({
       user, stats, tasks, loading, toast,
       login, register, logout, loadUserData,
       refreshStats, refreshTasks,
@@ -245,7 +244,21 @@ export function AppProvider({ children }) {
       createTask, updateTask, deleteTask,
       saveSession,
       setToast: setToastFn, clearToast,
-    }}>
+    }), [
+      user, stats, tasks, loading, toast,
+      login, register, logout, loadUserData,
+      refreshStats, refreshTasks,
+      updateProfile, syncGoogleCalendar,
+      joinTeacher,
+      createEnsemble, archiveEnsemble, deleteEnsemble,
+      createChallenge, createAssignment,
+      createTask, updateTask, deleteTask,
+      saveSession,
+      setToastFn, clearToast,
+    ])
+
+  return (
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   )

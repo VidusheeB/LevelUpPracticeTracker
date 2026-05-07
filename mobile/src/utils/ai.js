@@ -35,8 +35,8 @@ function sanitizeNotes(notes) {
 }
 
 async function callClaude(prompt, maxTokens = 400) {
-  if (CLAUDE_API_KEY === 'YOUR_CLAUDE_API_KEY_HERE') {
-    throw new Error('Paste your Claude API key into mobile/src/utils/ai.js')
+  if (!CLAUDE_API_KEY || CLAUDE_API_KEY === 'YOUR_CLAUDE_API_KEY_HERE') {
+    throw new Error('Add your Claude API key to mobile/.env')
   }
   const res = await fetch(API_URL, {
     method: 'POST',

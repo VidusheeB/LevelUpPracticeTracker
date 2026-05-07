@@ -15,7 +15,8 @@ import {
 WebBrowser.maybeCompleteAuthSession()
 
 const CLIENT_IDS_SET =
-  GOOGLE_CLIENT_IDS.iosClientId !== 'YOUR_IOS_CLIENT_ID_HERE' ||
+  GOOGLE_CLIENT_IDS.iosClientId !== 'YOUR_IOS_CLIENT_ID_HERE' &&
+  GOOGLE_CLIENT_IDS.androidClientId !== 'YOUR_ANDROID_CLIENT_ID_HERE' &&
   GOOGLE_CLIENT_IDS.webClientId !== 'YOUR_WEB_CLIENT_ID_HERE'
 
 // Renders the Google Calendar connect / sync / disconnect UI block.

@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Modal, Alert } from 'react-native'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import { useApp } from '../contexts/AppContext'
 import { db } from '../utils/supabase'
@@ -68,22 +68,26 @@ export default function Calendar() {
     event_time: '09:00',
     ensemble_id: null,
   })
+  const cells = useMemo(() => getMonthCells(year, month), [year, month])
+  const visibleStart = toDateStr(cells[0].date)
+  const visibleEnd = toDateStr(cells[cells.length - 1].date)
 
   const load = useCallback(async () => {
     try {
       const monthStart = new Date(year, month, 1).toISOString().split('T')[0]
       const monthEnd = new Date(year, month + 1, 0).toISOString().split('T')[0]
+      const remindersEnd = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const includeEnsembleEvents = user.role === 'student'
 
-      const [eventsData, sessionsData] = await Promise.all([
-        db.getCalendarEvents(user.id),
+      const [eventsData, reminderEventsData, sessionsData] = await Promise.all([
+        db.getCalendarEvents(user.id, { startDate: visibleStart, endDate: visibleEnd, includeEnsembleEvents }),
+        db.getCalendarEvents(user.id, { startDate: toDateStr(new Date()), endDate: remindersEnd, includeEnsembleEvents }),
         db.getSessions(user.id, monthStart, monthEnd),
       ])
 
-      let ensemblesData = []
-      if (isTeacher) {
-        ensemblesData = await db.getTeacherEnsembles(user.id)
-        ensemblesData = ensemblesData.filter(e => !e.archived)
-      }
+      const ensemblesData = isTeacher
+        ? (await db.getTeacherEnsembles(user.id)).filter(e => !e.archived)
+        : []
 
       setEvents(eventsData)
       setSessions(sessionsData)
@@ -91,11 +95,11 @@ export default function Calendar() {
 
       // Schedule notifications for upcoming events + tasks with due dates
       const upcomingTasks = (tasks || []).filter(t => t.due_date)
-      scheduleAllReminders(eventsData, upcomingTasks).catch(() => {})
+      scheduleAllReminders(reminderEventsData, upcomingTasks).catch(() => {})
     } catch (err) {
       console.error('Calendar load error:', err)
     }
-  }, [user.id, year, month, isTeacher, tasks])
+  }, [user.id, user.role, year, month, visibleStart, visibleEnd, isTeacher, tasks])
 
   useFocusEffect(useCallback(() => { load() }, [load]))
 
@@ -109,33 +113,41 @@ export default function Calendar() {
     else setMonth(m => m + 1)
   }
 
-  const cells = getMonthCells(year, month)
   const todayStr = toDateStr(now)
 
   // Build a map of dateStr → event data for dots
-  const eventsByDate = {}
-  for (const e of events) {
-    if (!e.date) continue
-    const ds = e.date.split('T')[0]
-    if (!eventsByDate[ds]) eventsByDate[ds] = []
-    eventsByDate[ds].push(e)
-  }
+  const eventsByDate = useMemo(() => {
+    const byDate = {}
+    for (const e of events) {
+      if (!e.date) continue
+      const ds = e.date.split('T')[0]
+      if (!byDate[ds]) byDate[ds] = []
+      byDate[ds].push(e)
+    }
+    return byDate
+  }, [events])
 
   // Practice session dots
-  const practiceByDate = {}
-  for (const s of sessions) {
-    const ds = new Date(s.start_time).toISOString().split('T')[0]
-    practiceByDate[ds] = true
-  }
+  const practiceByDate = useMemo(() => {
+    const byDate = {}
+    for (const s of sessions) {
+      const ds = new Date(s.start_time).toISOString().split('T')[0]
+      byDate[ds] = true
+    }
+    return byDate
+  }, [sessions])
 
   // Assignment due dates (from tasks with due_date)
-  const tasksByDate = {}
-  for (const t of (tasks || [])) {
-    if (!t.due_date) continue
-    const ds = t.due_date.split('T')[0]
-    if (!tasksByDate[ds]) tasksByDate[ds] = []
-    tasksByDate[ds].push(t)
-  }
+  const tasksByDate = useMemo(() => {
+    const byDate = {}
+    for (const t of (tasks || [])) {
+      if (!t.due_date) continue
+      const ds = t.due_date.split('T')[0]
+      if (!byDate[ds]) byDate[ds] = []
+      byDate[ds].push(t)
+    }
+    return byDate
+  }, [tasks])
 
   const dotsForDate = (ds) => {
     const dots = []
@@ -150,8 +162,10 @@ export default function Calendar() {
   }
 
   // Events for selected day
-  const selectedEvents = (eventsByDate[selectedDate] || [])
-    .sort((a, b) => (a.event_time || '').localeCompare(b.event_time || ''))
+  const selectedEvents = useMemo(() => (
+    [...(eventsByDate[selectedDate] || [])]
+      .sort((a, b) => (a.event_time || '').localeCompare(b.event_time || ''))
+  ), [eventsByDate, selectedDate])
   const selectedPracticed = practiceByDate[selectedDate]
   const selectedTasks = tasksByDate[selectedDate] || []
 

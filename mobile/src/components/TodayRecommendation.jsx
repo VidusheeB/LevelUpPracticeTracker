@@ -27,9 +27,15 @@ export default function TodayRecommendation() {
     setError(null)
     try {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      const today = new Date().toISOString().split('T')[0]
+      const ninetyDaysOut = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       const fetches = [
         db.getMoodLogs(user.id, 7),
-        db.getCalendarEvents(user.id),
+        db.getCalendarEvents(user.id, {
+          startDate: today,
+          endDate: ninetyDaysOut,
+          includeEnsembleEvents: user.role === 'student',
+        }),
         db.getSessions(user.id, weekAgo),
         user?.ai_read_notebook ? db.getNotebookEntries(user.id) : Promise.resolve(null),
       ]

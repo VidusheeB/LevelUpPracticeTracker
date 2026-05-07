@@ -85,7 +85,10 @@ export default function TaskCard({ task, rehearsal, showActions = true }) {
         {showActions && (
           <TouchableOpacity
             className="w-10 h-10 rounded-full bg-indigo-500 items-center justify-center shadow"
-            onPress={() => navigation.navigate('Practice', { selectedTask: task.id })}
+            onPress={() => navigation.navigate('Main', {
+              screen: 'Practice',
+              params: { selectedTask: task.id },
+            })}
           >
             <Text className="text-white">▶</Text>
           </TouchableOpacity>

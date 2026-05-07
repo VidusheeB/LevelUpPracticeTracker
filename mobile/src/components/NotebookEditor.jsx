@@ -29,48 +29,61 @@ export default function NotebookEditor() {
 
   const entryIdRef = useRef(initialEntry?.id || null)
   const saveTimerRef = useRef(null)
+  const latestDraftRef = useRef({ title: initialEntry?.title || '', content: initialEntry?.content || '', tags: initialEntry?.tags || [] })
+  const dirtyRef = useRef(false)
+
+  const persistEntry = useCallback(async (t, c, tgs) => {
+    const payload = {
+      title: t.trim() || 'Untitled',
+      content: c,
+      tags: tgs,
+      updated_at: new Date().toISOString(),
+    }
+    if (entryIdRef.current) {
+      await db.updateNotebookEntry(entryIdRef.current, payload)
+      return
+    }
+    const created = await db.createNotebookEntry(user.id, {
+      ...payload,
+      session_id: sessionId,
+    })
+    entryIdRef.current = created.id
+  }, [user.id, sessionId])
 
   // Save to Supabase — creates if no ID yet, updates if exists
-  const save = useCallback(async (t, c, tgs) => {
-    setSaving(true)
+  const save = useCallback(async (t, c, tgs, { silent = false } = {}) => {
+    if (!silent) setSaving(true)
     try {
-      const payload = {
-        title: t.trim() || 'Untitled',
-        content: c,
-        tags: tgs,
-        updated_at: new Date().toISOString(),
-      }
-      if (entryIdRef.current) {
-        await db.updateNotebookEntry(entryIdRef.current, payload)
-      } else {
-        const created = await db.createNotebookEntry(user.id, {
-          ...payload,
-          session_id: sessionId,
-        })
-        entryIdRef.current = created.id
-      }
-      setSavedAt(new Date())
+      await persistEntry(t, c, tgs)
+      dirtyRef.current = false
+      if (!silent) setSavedAt(new Date())
     } catch {
-      setToast('Failed to save', 'error')
+      if (!silent) setToast('Failed to save', 'error')
     } finally {
-      setSaving(false)
+      if (!silent) setSaving(false)
     }
-  }, [user.id, sessionId])
+  }, [persistEntry, setToast])
 
   // Debounce autosave — fires 1.5s after last keystroke
   const scheduleAutosave = useCallback((t, c, tgs) => {
+    latestDraftRef.current = { title: t, content: c, tags: tgs }
+    dirtyRef.current = true
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => save(t, c, tgs), 1500)
   }, [save])
 
-  // Flush save on unmount
+  // Flush any pending edit when leaving before the debounce fires.
   useEffect(() => {
     return () => {
       if (saveTimerRef.current) {
         clearTimeout(saveTimerRef.current)
       }
+      if (dirtyRef.current) {
+        const draft = latestDraftRef.current
+        save(draft.title, draft.content, draft.tags, { silent: true }).catch(() => {})
+      }
     }
-  }, [])
+  }, [save])
 
   const handleTitleChange = (v) => { setTitle(v); scheduleAutosave(v, content, tags) }
   const handleContentChange = (v) => { setContent(v); scheduleAutosave(title, v, tags) }
