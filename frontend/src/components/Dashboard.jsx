@@ -84,7 +84,7 @@ export default function Dashboard() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            Hey, {user.name.split(' ')[0]}!
+            Hey, {user.name?.split(' ')[0] || 'there'}!
           </h1>
           <p className="text-gray-500">Ready to practice?</p>
         </div>

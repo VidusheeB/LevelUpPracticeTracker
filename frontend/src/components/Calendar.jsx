@@ -47,6 +47,8 @@ export default function Calendar() {
   // LOAD DATA
   // ---------------------------------------------------------------------------
   useEffect(() => {
+    let cancelled = false
+
     const loadData = async () => {
       try {
         const today = new Date()
@@ -56,23 +58,27 @@ export default function Calendar() {
         const weekEnd = new Date(weekStart)
         weekEnd.setDate(weekStart.getDate() + 6)
 
-        // Load practice sessions
-        const sessionsData = await api.getSessions(
-          user.id,
-          weekStart.toISOString().split('T')[0],
-          weekEnd.toISOString().split('T')[0]
-        )
-        setSessions(sessionsData)
+        // Load practice sessions and calendar events in parallel
+        const [sessionsData, eventsData] = await Promise.all([
+          api.getSessions(
+            user.id,
+            weekStart.toISOString().split('T')[0],
+            weekEnd.toISOString().split('T')[0]
+          ),
+          api.getCalendarEvents(user.id),
+        ])
 
-        // Load calendar events
-        const eventsData = await api.getCalendarEvents(user.id)
-        setCalendarEvents(eventsData)
+        if (!cancelled) {
+          setSessions(sessionsData)
+          setCalendarEvents(eventsData)
+        }
       } catch (error) {
-        console.error('Failed to load data:', error)
+        if (!cancelled) console.error('Failed to load data:', error)
       }
     }
 
     loadData()
+    return () => { cancelled = true }
   }, [user.id])
 
 
@@ -112,8 +118,9 @@ export default function Calendar() {
 
   const dayHasEvent = (day) => {
     return calendarEvents.some(event => {
+      if (!event.date) return false
       const eventDate = new Date(event.date)
-      return eventDate.toDateString() === day.toDateString()
+      return !isNaN(eventDate.getTime()) && eventDate.toDateString() === day.toDateString()
     })
   }
 

@@ -26,7 +26,7 @@ export default function EnsembleDashboard() {
     if (!isStudent || !user?.teacher_id) return
     try {
       const data = await api.getNotes(user.id, user.teacher_id)
-      setMessages(data.reverse())
+      setMessages([...data].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
     } catch (error) {
       console.error('Failed to load messages:', error)
     }
@@ -66,13 +66,14 @@ export default function EnsembleDashboard() {
     if (isStudent && user?.teacher_id) {
       const load = async () => {
         try {
-          const [teacherData] = await Promise.all([
+          const [teacherData, notesData] = await Promise.all([
             api.getUser(user.teacher_id),
-            loadTeacherMessages()
+            api.getNotes(user.id, user.teacher_id),
           ])
           setTeacher(teacherData)
-        } catch {
-          loadTeacherMessages()
+          setMessages([...notesData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)))
+        } catch (error) {
+          console.error('Failed to load teacher data:', error)
         }
       }
       load()

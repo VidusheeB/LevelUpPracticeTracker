@@ -34,7 +34,7 @@ export default function Achievements() {
       if (!user?.id) return
       try {
         const badges = await api.getUserBadges(user.id)
-        setEarnedBadges(badges.map(b => b.badge_type))
+        setEarnedBadges(badges.map(b => b.badge_type).filter(Boolean))
       } catch (error) {
         console.error('Failed to load badges:', error)
       } finally {

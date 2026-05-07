@@ -52,17 +52,29 @@ async function fetchAPI(endpoint, options = {}) {
     ...options.headers,
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  })
+  let response
+  try {
+    response = await fetch(url, { ...options, headers })
+  } catch {
+    throw new Error('Network error — please check your connection')
+  }
 
-  // Parse response
-  const data = await response.json()
+  // Parse response body safely regardless of content type
+  let data
+  const contentType = response.headers.get('content-type') || ''
+  if (contentType.includes('application/json')) {
+    data = await response.json()
+  } else {
+    const text = await response.text()
+    if (!response.ok) {
+      throw new Error(text || `Request failed with status ${response.status}`)
+    }
+    return text
+  }
 
   // Throw error for non-OK responses
   if (!response.ok) {
-    throw new Error(data.detail || 'API request failed')
+    throw new Error(data.detail || `Request failed with status ${response.status}`)
   }
 
   return data
@@ -83,6 +95,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ email }),
     })
+    if (!response?.user) throw new Error('User not found')
     return response.user
   },
 

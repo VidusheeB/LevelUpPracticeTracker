@@ -81,6 +81,7 @@ export default function PracticeSession() {
       setToast('Please select at least one task', 'warning')
       return
     }
+    if (timerRef.current) return // Already running
 
     setStartTime(new Date())
     setPhase('active')
@@ -138,14 +139,24 @@ export default function PracticeSession() {
   // ---------------------------------------------------------------------------
   // SAVE SESSION (with ratings)
   // ---------------------------------------------------------------------------
-  const handleSaveSession = async () => {
-    const durationMinutes = Math.max(1, Math.ceil(seconds / 60))
-
-    // Build task breakdown (evenly split time for now)
-    const taskBreakdown = Array.from(selectedTasks).map(taskId => ({
+  const buildTaskBreakdown = (durationMinutes) => {
+    const taskIds = Array.from(selectedTasks)
+    const base = Math.floor(durationMinutes / taskIds.length)
+    const remainder = durationMinutes - base * taskIds.length
+    return taskIds.map((taskId, i) => ({
       task_id: taskId,
-      minutes_spent: Math.ceil(durationMinutes / selectedTasks.size)
+      minutes_spent: base + (i < remainder ? 1 : 0),
     }))
+  }
+
+  const handleSaveSession = async () => {
+    if (!startTime) {
+      setToast('Session start time is missing', 'error')
+      return
+    }
+
+    const durationMinutes = Math.max(1, Math.ceil(seconds / 60))
+    const taskBreakdown = buildTaskBreakdown(durationMinutes)
 
     try {
       const result = await saveSession({
@@ -170,13 +181,13 @@ export default function PracticeSession() {
   // QUICK SAVE (save progress without ratings and exit)
   // ---------------------------------------------------------------------------
   const handleQuickSave = async () => {
-    const durationMinutes = Math.max(1, Math.ceil(seconds / 60))
+    if (!startTime) {
+      setToast('Session start time is missing', 'error')
+      return
+    }
 
-    // Build task breakdown (evenly split time for now)
-    const taskBreakdown = Array.from(selectedTasks).map(taskId => ({
-      task_id: taskId,
-      minutes_spent: Math.ceil(durationMinutes / selectedTasks.size)
-    }))
+    const durationMinutes = Math.max(1, Math.ceil(seconds / 60))
+    const taskBreakdown = buildTaskBreakdown(durationMinutes)
 
     try {
       await saveSession({
@@ -247,33 +258,41 @@ export default function PracticeSession() {
         </header>
 
         {/* Task Selection */}
-        <div className="space-y-2">
-          {tasks.map((task) => (
-            <button
-              key={task.id}
-              onClick={() => toggleTask(task.id)}
-              className={`w-full p-4 rounded-xl text-left transition-all
-                ${selectedTasks.has(task.id)
-                  ? 'bg-primary/10 border-2 border-primary'
-                  : 'bg-white border-2 border-gray-100 hover:border-gray-200'}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+        {tasks.length === 0 ? (
+          <div className="card text-center py-8">
+            <span className="text-4xl mb-2 block">📝</span>
+            <p className="text-gray-500 mb-1">No tasks yet</p>
+            <p className="text-sm text-gray-400">Add tasks from the Tasks tab to track your practice</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {tasks.map((task) => (
+              <button
+                key={task.id}
+                onClick={() => toggleTask(task.id)}
+                className={`w-full p-4 rounded-xl text-left transition-all
                   ${selectedTasks.has(task.id)
-                    ? 'bg-primary border-primary text-white'
-                    : 'border-gray-300'}`}>
-                  {selectedTasks.has(task.id) && '✓'}
+                    ? 'bg-primary/10 border-2 border-primary'
+                    : 'bg-white border-2 border-gray-100 hover:border-gray-200'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                    ${selectedTasks.has(task.id)
+                      ? 'bg-primary border-primary text-white'
+                      : 'border-gray-300'}`}>
+                    {selectedTasks.has(task.id) && '✓'}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{task.title}</p>
+                    <p className="text-sm text-gray-500">
+                      {task.total_time_practiced}/{task.estimated_minutes} min practiced
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{task.title}</p>
-                  <p className="text-sm text-gray-500">
-                    {task.total_time_practiced}/{task.estimated_minutes} min practiced
-                  </p>
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Start Button */}
         <button
