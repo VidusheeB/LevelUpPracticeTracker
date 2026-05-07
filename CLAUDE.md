@@ -179,6 +179,13 @@ All migrations confirmed run ✅ except:
 
 ## Session log (newest first)
 
+### Session: AI Chat screen
+- Built `AIChat.jsx` — freeform chat screen with iMessage-style bubbles, typing indicator, starter prompts, KeyboardAvoidingView, auto-scroll
+- Added `getChatResponse(userMessage, history, context)` to `ai.js` — system prompt loads full app context (tasks, mood, sessions, calendar, notebook), sanitized, no PII
+- Added `callClaudeWithHistory()` internal helper for multi-turn Claude calls with system prompt
+- Registered `AIChat` as stack screen in `App.js`
+- Added "Ask Your Practice Coach" full-width button on Dashboard above quick actions row
+
 ### Session: VS Code setup
 - Updated CLAUDE.md with first-time setup instructions for VS Code
 - Claude API key now loaded from `mobile/.env` (gitignored) via `EXPO_PUBLIC_ANTHROPIC_KEY`
@@ -217,10 +224,9 @@ All migrations confirmed run ✅ except:
 
 ## Next priorities (pick up here)
 
-1. **AI Chat screen** — freeform chat where Claude has full app context (tasks, notes, mood logs, ensemble history, notebook). Not a generic chatbot.
-2. **Server-side push notifications** — Edge Function exists at `supabase/functions/deliver-notifications/index.ts` but not deployed. Run: `npx supabase functions deploy deliver-notifications --project-ref yqcwvpwzykawwndbyakw`
-3. **UI redesign** — left sidebar nav, split-pane layout, activity feed on right, progress bar at bottom (hrs/XP/completed this week)
-4. **Image attachments in messaging** — teacher ↔ student photo support
+1. **Server-side push notifications** — Edge Function exists at `supabase/functions/deliver-notifications/index.ts` but not deployed. Run: `npx supabase functions deploy deliver-notifications --project-ref yqcwvpwzykawwndbyakw`
+2. **UI redesign** — left sidebar nav, split-pane layout, activity feed on right, progress bar at bottom (hrs/XP/completed this week)
+3. **Image attachments in messaging** — teacher ↔ student photo support
 
 ---
 

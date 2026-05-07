@@ -35,8 +35,8 @@ function sanitizeNotes(notes) {
 }
 
 async function callClaude(prompt, maxTokens = 400) {
-  if (CLAUDE_API_KEY === 'YOUR_CLAUDE_API_KEY_HERE') {
-    throw new Error('Paste your Claude API key into mobile/src/utils/ai.js')
+  if (!CLAUDE_API_KEY) {
+    throw new Error('Add your Claude API key to mobile/.env as EXPO_PUBLIC_ANTHROPIC_KEY')
   }
   const res = await fetch(API_URL, {
     method: 'POST',
@@ -411,6 +411,118 @@ Mostly focused on Autumn Leaves chord changes. Energy dips mid-week consistently
 Return only the table of contents text, nothing else.`
 
   return callClaude(prompt, 600)
+}
+
+// Multi-turn Claude call with system prompt and conversation history.
+// Used by the AI Chat screen — other functions use callClaude() instead.
+async function callClaudeWithHistory(systemPrompt, messages, maxTokens = 600) {
+  if (!CLAUDE_API_KEY) {
+    throw new Error('Add your Claude API key to mobile/.env as EXPO_PUBLIC_ANTHROPIC_KEY')
+  }
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'x-api-key': CLAUDE_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages,
+    }),
+  })
+  if (!res.ok) {
+    const err = await res.text()
+    throw new Error(`Claude API error ${res.status}: ${err}`)
+  }
+  const data = await res.json()
+  return data.content[0].text
+}
+
+// Freeform coaching chat with full app context in the system prompt.
+// history is an array of { role: 'user'|'assistant', text: string }.
+// context contains tasks, moodLogs, sessions, calendarEvents, notebookEntries, stats.
+export async function getChatResponse(userMessage, history, context) {
+  const {
+    tasks = [],
+    moodLogs = [],
+    sessions = [],
+    calendarEvents = [],
+    notebookEntries = null,
+    stats = {},
+  } = context
+
+  const taskContext = tasks
+    .filter(t => t.status !== 'ready')
+    .slice(0, 8)
+    .map(t => {
+      const s = sanitizeTask(t)
+      return `• ${s.title} (${s.category || 'repertoire'}) — ${t.readiness_score || 0}% ready, ${s.total_time_practiced || 0}/${s.estimated_minutes || 30} min practiced`
+    }).join('\n') || 'No active tasks.'
+
+  const recentMood = moodLogs.slice(0, 7)
+  const avgMood = recentMood.length
+    ? (recentMood.reduce((s, l) => s + (l.mood_score || 3), 0) / recentMood.length).toFixed(1)
+    : null
+  const moodContext = avgMood ? `7-day mood average: ${avgMood}/5` : 'No mood data.'
+
+  const recentFrustrations = moodLogs
+    .flatMap(l => (l.entries || []).filter(e => e.id === 'frustration' && e.a).map(e => e.a))
+    .slice(0, 2).join('; ')
+
+  const today = new Date()
+  const in14Days = new Date(today)
+  in14Days.setDate(today.getDate() + 14)
+  const upcomingEvents = calendarEvents
+    .filter(e => { const d = new Date(e.date); return d >= today && d <= in14Days })
+    .slice(0, 5)
+    .map(e => `• ${e.title} — ${new Date(e.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`)
+    .join('\n') || 'Nothing upcoming in next 2 weeks.'
+
+  const sessionContext = sessions.slice(0, 7).map(s =>
+    `• ${new Date(s.start_time).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}: ${s.duration_minutes} min, focus ${s.focus_rating}/5`
+  ).join('\n') || 'No recent sessions.'
+
+  const notebookSection = notebookEntries && notebookEntries.length > 0
+    ? `\n${buildNotebookContext(notebookEntries)}`
+    : ''
+
+  const statsContext = [
+    stats.streak_count > 0 ? `Current streak: ${stats.streak_count} days` : null,
+    stats.level ? `Level ${stats.level}` : null,
+    stats.weekly_minutes != null ? `This week: ${stats.weekly_minutes} / ${stats.weekly_goal_minutes || 0} min` : null,
+  ].filter(Boolean).join(' · ')
+
+  const systemPrompt = `You are a personal music practice coach. You know this student's full practice history — you are NOT a generic chatbot.
+
+Student stats: ${statsContext || 'No stats yet.'}
+
+Active tasks:
+${taskContext}
+
+Mood: ${moodContext}${recentFrustrations ? ` Frustrations: "${recentFrustrations}"` : ''}
+
+Recent sessions:
+${sessionContext}
+
+Upcoming events (next 14 days):
+${upcomingEvents}${notebookSection}
+
+Rules:
+- Always reference specific pieces, passages, or data from above — never give generic advice
+- Be direct and coach-like, not chatbot-like. Sound like a real human music teacher
+- Keep responses concise: 2-4 sentences for most replies
+- If asked to recommend repertoire, base it on what they're already working on
+- Never mention user IDs, emails, or any technical app internals`
+
+  const apiMessages = [
+    ...history.map(m => ({ role: m.role, content: m.text })),
+    { role: 'user', content: userMessage },
+  ]
+
+  return callClaudeWithHistory(systemPrompt, apiMessages, 600)
 }
 
 // Generate a personalised coaching tip based on practice history + notes
