@@ -60,15 +60,8 @@ CLAUDE.md                         # This file
 ### Tables (all with RLS enabled)
 `profiles`, `practice_tasks`, `practice_sessions`, `session_tasks`, `badges`, `notes`, `ensembles`, `ensemble_members`, `assignments`, `assignment_submissions`, `challenges`, `challenge_ensembles`, `calendar_events`, `task_notes`, `mood_logs`, `push_tokens`, `scheduled_notifications`
 
-### SQL still to run (user hasn't confirmed these yet)
-```sql
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS google_calendar_connected bool DEFAULT false;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS google_calendar_synced_at timestamptz;
-ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';
-ALTER TABLE mood_logs DROP CONSTRAINT IF EXISTS mood_logs_type_check;
-ALTER TABLE mood_logs ADD CONSTRAINT mood_logs_type_check
-  CHECK (type IN ('quick', 'deep', 'pre_session'));
-```
+### SQL status
+All migrations confirmed run ✅ — all tables, columns, RLS policies, and extensions are live.
 
 ---
 

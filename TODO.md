@@ -2,15 +2,7 @@
 
 ## Blockers (manual steps required)
 
-- [ ] Run SQL migrations in Supabase Dashboard → SQL Editor
-  ```sql
-  ALTER TABLE profiles ADD COLUMN IF NOT EXISTS google_calendar_connected bool DEFAULT false;
-  ALTER TABLE profiles ADD COLUMN IF NOT EXISTS google_calendar_synced_at timestamptz;
-  ALTER TABLE calendar_events ADD COLUMN IF NOT EXISTS source text DEFAULT 'manual';
-  ALTER TABLE mood_logs DROP CONSTRAINT IF EXISTS mood_logs_type_check;
-  ALTER TABLE mood_logs ADD CONSTRAINT mood_logs_type_check
-    CHECK (type IN ('quick', 'deep', 'pre_session'));
-  ```
+- [x] Run SQL migrations in Supabase — all tables and columns confirmed created ✅
 - [ ] Set up Google Cloud Console OAuth credentials → paste iOS, Android, Web client IDs into `mobile/src/utils/googleAuth.js`
 - [ ] Add Claude API key to `mobile/src/utils/ai.js`
 
