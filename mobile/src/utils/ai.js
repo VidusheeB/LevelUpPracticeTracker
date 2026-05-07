@@ -285,7 +285,7 @@ type is either "emoji_scale" or "text".`
 // Generate today's targeted practice recommendation.
 // Grounded in research: deliberate practice (Ericsson), cognitive load theory,
 // interleaved vs blocked practice, spaced retrieval, Pomodoro for high-stress.
-export async function getPracticeRecommendation(tasks, moodLogs, calendarEvents, sessionHistory) {
+export async function getPracticeRecommendation(tasks, moodLogs, calendarEvents, sessionHistory, notebookEntries = null) {
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
   const currentHour = new Date().getHours()
   const timeOfDay = currentHour < 12 ? 'morning' : currentHour < 17 ? 'afternoon' : 'evening'
@@ -318,6 +318,10 @@ export async function getPracticeRecommendation(tasks, moodLogs, calendarEvents,
   const recentSessionMins = sessionHistory.slice(0, 7)
     .reduce((s, sess) => s + (sess.duration_minutes || 0), 0)
 
+  const notebookSection = notebookEntries && notebookEntries.length > 0
+    ? `\n${buildNotebookContext(notebookEntries)}`
+    : ''
+
   const prompt = `Today is ${today}, ${timeOfDay}. You are a music practice coach generating today's specific practice recommendation for a student.
 
 Mood & wellbeing:
@@ -330,7 +334,7 @@ ${taskContext || 'No active tasks.'}
 Upcoming calendar events:
 ${upcomingEvents}
 
-Practice volume this week: ${recentSessionMins} minutes across ${Math.min(sessionHistory.length, 7)} sessions.
+Practice volume this week: ${recentSessionMins} minutes across ${Math.min(sessionHistory.length, 7)} sessions.${notebookSection}
 
 Generate a specific, research-backed practice recommendation for today. You must:
 
@@ -357,6 +361,55 @@ Return ONLY a JSON object:
   const raw = await callClaude(prompt, 500)
   const clean = raw.replace(/```json\n?|```\n?/g, '').trim()
   return JSON.parse(clean)
+}
+
+// Build a sanitized notebook context string to include in prompts when
+// the user has enabled "Let Claude read my notebook".
+export function buildNotebookContext(entries) {
+  if (!entries || entries.length === 0) return null
+  const lines = entries.slice(0, 10).map(e => {
+    const date = new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const tag = e.tags?.[0] || 'general'
+    const preview = (e.content || '').slice(0, 200).replace(/\n/g, ' ')
+    return `• [${date}] "${e.title || 'Untitled'}" (${tag})${preview ? ': ' + preview : ''}`
+  })
+  return `Recent notebook entries:\n${lines.join('\n')}`
+}
+
+// Generate an AI table of contents from the user's notebook entries.
+// Groups by theme or time period and writes 1-2 sentence summaries per section.
+export async function getNotebookTableOfContents(entries) {
+  const today = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+
+  const entryList = entries.slice(0, 50).map(e => {
+    const date = new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const tag = e.tags?.[0] || 'general'
+    const preview = (e.content || '').slice(0, 120).replace(/\n/g, ' ')
+    return `• [${date}] "${e.title || 'Untitled'}" (${tag})${preview ? ': ' + preview : ''}`
+  }).join('\n')
+
+  const prompt = `Today is ${today}. A music student has ${entries.length} notebook entries. Generate a table of contents that organises these into meaningful themes or time periods.
+
+Entries (newest first):
+${entryList}
+
+Rules:
+- Group by theme (e.g. Practice Reflections, Lesson Notes, Music Writing, Technique) OR by time period — whichever makes more sense
+- For each group, write 1-2 sentences summarising patterns you notice — reference specific pieces, concepts, or recurring themes
+- Keep it concise — this is a navigation aid, not an essay
+- Use plain text: section name in CAPS followed by a brief summary and a short entry list
+- No markdown symbols (**, ##, etc.) — just plain text
+- Max 350 words
+
+Example format:
+PRACTICE REFLECTIONS (8 entries, Mar–May)
+Mostly focused on Autumn Leaves chord changes. Energy dips mid-week consistently across three weeks.
+  Mar 12 — First crack at the ii-V-I turnaround
+  ...
+
+Return only the table of contents text, nothing else.`
+
+  return callClaude(prompt, 600)
 }
 
 // Generate a personalised coaching tip based on practice history + notes

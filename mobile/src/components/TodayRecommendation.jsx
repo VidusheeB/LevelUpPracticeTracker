@@ -27,13 +27,15 @@ export default function TodayRecommendation() {
     setError(null)
     try {
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-      const [moodLogs, calendarEvents, sessions] = await Promise.all([
+      const fetches = [
         db.getMoodLogs(user.id, 7),
         db.getCalendarEvents(user.id),
         db.getSessions(user.id, weekAgo),
-      ])
+        user?.ai_read_notebook ? db.getNotebookEntries(user.id) : Promise.resolve(null),
+      ]
+      const [moodLogs, calendarEvents, sessions, notebookEntries] = await Promise.all(fetches)
       const result = await getPracticeRecommendation(
-        tasks, moodLogs, calendarEvents, sessions.slice(0, 7)
+        tasks, moodLogs, calendarEvents, sessions.slice(0, 7), notebookEntries
       )
       setRec(result)
     } catch (err) {

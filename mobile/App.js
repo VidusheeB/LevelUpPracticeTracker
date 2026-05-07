@@ -29,6 +29,8 @@ import StudentEnsembleView from './src/components/StudentEnsembleView'
 import TaskDetail from './src/components/TaskDetail'
 import PrivacyPolicy from './src/components/PrivacyPolicy'
 import DeepCheckIn from './src/components/DeepCheckIn'
+import Notebook from './src/components/Notebook'
+import NotebookEditor from './src/components/NotebookEditor'
 import Toast from './src/components/Toast'
 
 const Tab = createBottomTabNavigator()
@@ -168,6 +170,16 @@ function AppStack() {
         name="DeepCheckIn"
         component={DeepCheckIn}
         options={{ headerShown: true, title: 'Weekly Reflection', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="Notebook"
+        component={Notebook}
+        options={{ headerShown: true, title: 'Notebook', headerTintColor: '#6366f1' }}
+      />
+      <Stack.Screen
+        name="NotebookEditor"
+        component={NotebookEditor}
+        options={{ headerShown: false }}
       />
     </Stack.Navigator>
   )

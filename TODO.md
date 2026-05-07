@@ -11,10 +11,35 @@
 ## Features To Build
 
 ### High priority
-- [ ] **Notebook** — free-form per-user notebook (session reflections, music writing, lesson notes)
-  - AI-generated table of contents
-  - "Let AI read my notebook" toggle → Claude uses it as extra context for coaching
-  - Post-session prompt to add a reflection
+- [x] **Notebook** — free-form per-user notebook (session reflections, music writing, lesson notes)
+  - AI-generated table of contents ✅
+  - "Let AI read my notebook" toggle → Claude uses it as extra context for coaching ✅
+  - Post-session prompt to add a reflection ✅
+  - ⚠️ **SQL still needed** — run in Supabase before testing:
+    ```sql
+    -- Add ai_read_notebook column to profiles
+    ALTER TABLE profiles ADD COLUMN IF NOT EXISTS ai_read_notebook BOOLEAN DEFAULT FALSE;
+
+    -- Create notebook_entries table
+    CREATE TABLE IF NOT EXISTS notebook_entries (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+      session_id UUID REFERENCES practice_sessions(id) ON DELETE SET NULL,
+      title TEXT NOT NULL DEFAULT '',
+      content TEXT NOT NULL DEFAULT '',
+      tags TEXT[] NOT NULL DEFAULT '{}',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    ALTER TABLE notebook_entries ENABLE ROW LEVEL SECURITY;
+
+    CREATE POLICY "Users manage own notebook entries" ON notebook_entries
+      FOR ALL USING (auth.uid() = user_id);
+
+    CREATE INDEX IF NOT EXISTS notebook_entries_user_id_idx ON notebook_entries(user_id);
+    CREATE INDEX IF NOT EXISTS notebook_entries_updated_at_idx ON notebook_entries(updated_at DESC);
+    ```
 - [ ] **AI Chat screen** — freeform Claude chat with full app context loaded in (tasks, notes, mood, ensemble history)
 - [ ] **Server-side push notifications** — Expo Push Tokens + Supabase Edge Function `deliver-notifications` (currently local-only)
 

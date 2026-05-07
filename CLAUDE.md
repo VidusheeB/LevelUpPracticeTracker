@@ -120,6 +120,19 @@ All migrations confirmed run ✅ — all tables, columns, RLS policies, and exte
 
 ## Session log (newest first)
 
+### Session: continue-app-development (continued)
+- **Built Notebook feature** — fully integrated:
+  - `Notebook.jsx` — entry list, search, "Let Claude read" toggle, AI Table of Contents button
+  - `NotebookEditor.jsx` — full-screen debounced autosave editor with tag chips, create-on-first-save
+  - `supabase.js` — added `getNotebookEntries`, `createNotebookEntry`, `updateNotebookEntry`, `deleteNotebookEntry`
+  - `ai.js` — added `buildNotebookContext`, `getNotebookTableOfContents`, updated `getPracticeRecommendation` (5th param)
+  - `App.js` — registered `Notebook` and `NotebookEditor` screens
+  - `Dashboard.jsx` — added side-by-side "Weekly Reflection" + "My Notebook" quick action buttons
+  - `PracticeSession.jsx` — post-session complete screen now has "Write Reflection" button linking to `NotebookEditor` with `sessionId`
+  - `Profile.jsx` — added "My Notebook" link in quick links section
+  - `TodayRecommendation.jsx` — fetches notebook entries when `user.ai_read_notebook` is true and passes to recommendation
+- **SQL needed** (not yet run): `notebook_entries` table + `ai_read_notebook` column on profiles (see TODO.md)
+
 ### Session: continue-app-development
 - Built ICS calendar import (later replaced with Google OAuth)
 - Built `PreSessionCheckIn` — mood + Claude intention question shown before timer starts
