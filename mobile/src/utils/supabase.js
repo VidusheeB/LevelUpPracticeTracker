@@ -334,6 +334,69 @@ export const db = {
     return data || null
   },
 
+  // ---------------------------------------------------------------------------
+  // NOTEBOOK
+  // ---------------------------------------------------------------------------
+
+  async getNotebookEntries(userId) {
+    const { data, error } = await supabase
+      .from('notebook_entries').select('*').eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+  async createNotebookEntry(userId, entryData) {
+    const { data, error } = await supabase
+      .from('notebook_entries')
+      .insert({ user_id: userId, ...entryData })
+      .select().single()
+    if (error) throw new Error(error.message)
+    return data
+  },
+  async updateNotebookEntry(id, updates) {
+    const { data, error } = await supabase
+      .from('notebook_entries').update(updates).eq('id', id).select().single()
+    if (error) throw new Error(error.message)
+    return data
+  },
+  async deleteNotebookEntry(id) {
+    const { error } = await supabase.from('notebook_entries').delete().eq('id', id)
+    if (error) throw new Error(error.message)
+  },
+
+  // Google Calendar Sync — replaces all Google-sourced events for this user.
+  // Pass events=null to clear (used on disconnect).
+  async syncGoogleCalendarEvents(userId, events) {
+    // Always clear existing Google events first
+    await supabase.from('calendar_events')
+      .delete()
+      .eq('user_id', userId)
+      .eq('source', 'google')
+
+    if (events && events.length > 0) {
+      const { error } = await supabase.from('calendar_events').insert(
+        events.map(e => ({
+          user_id: userId,
+          created_by: userId,
+          title: e.title,
+          date: e.date,
+          event_time: e.time || '09:00',
+          type: 'other',
+          source: 'google',
+        }))
+      )
+      if (error) throw new Error(error.message)
+    }
+
+    // Update profile: connected flag + last synced time
+    await supabase.from('profiles').update({
+      google_calendar_connected: !!(events && events.length >= 0),
+      google_calendar_synced_at: events ? new Date().toISOString() : null,
+    }).eq('id', userId)
+
+    return events ? events.length : 0
+  },
+
   // Push Tokens — one row per device, upserted on every login
   async savePushToken(userId, token, platform) {
     const { error } = await supabase

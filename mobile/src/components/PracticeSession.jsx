@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'reac
 import { useNavigation, useRoute } from '@react-navigation/native'
 import { useApp } from '../contexts/AppContext'
 import MindfulCheckIn from './MindfulCheckIn'
+import PreSessionCheckIn from './PreSessionCheckIn'
 
 export default function PracticeSession() {
   const navigation = useNavigation()
@@ -20,6 +21,7 @@ export default function PracticeSession() {
   const [notes, setNotes] = useState('')
   const [sessionResult, setSessionResult] = useState(null)
   const [showCheckIn, setShowCheckIn] = useState(false)
+  const [showPreCheckIn, setShowPreCheckIn] = useState(false)
 
   useEffect(() => {
     if (route.params?.selectedTask) {
@@ -34,6 +36,11 @@ export default function PracticeSession() {
   const startTimer = () => {
     if (selectedTasks.size === 0) { setToast('Please select at least one task', 'warning'); return }
     if (timerRef.current) return
+    setShowPreCheckIn(true)
+  }
+
+  const beginTimerAfterCheckIn = () => {
+    setShowPreCheckIn(false)
     setStartTime(new Date())
     setPhase('active')
     timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000)
@@ -171,6 +178,13 @@ export default function PracticeSession() {
         >
           <Text className="text-white font-semibold text-lg">Start Timer</Text>
         </TouchableOpacity>
+
+        {showPreCheckIn && (
+          <PreSessionCheckIn
+            onDone={beginTimerAfterCheckIn}
+            onSkip={beginTimerAfterCheckIn}
+          />
+        )}
       </ScrollView>
     )
   }
@@ -272,9 +286,18 @@ export default function PracticeSession() {
         <Text className="text-gray-500 italic mb-8">
           {focusRating >= 4 ? 'Excellent focus! Keep it up!' : 'Every practice session counts!'}
         </Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')} className="bg-indigo-500 rounded-xl px-8 py-4">
-          <Text className="text-white font-semibold">Back to Dashboard</Text>
-        </TouchableOpacity>
+        <View className="flex-row gap-3 w-full">
+          <TouchableOpacity
+            onPress={() => navigation.navigate('NotebookEditor', { sessionId: sessionResult.id })}
+            className="flex-1 bg-amber-50 rounded-xl py-3 items-center border border-amber-100"
+          >
+            <Text className="text-xl mb-0.5">📓</Text>
+            <Text className="text-amber-700 font-semibold text-sm">Write Reflection</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} className="flex-1 bg-indigo-500 rounded-xl py-3 items-center">
+            <Text className="text-white font-semibold">Dashboard</Text>
+          </TouchableOpacity>
+        </View>
 
         {showCheckIn && (
           <MindfulCheckIn

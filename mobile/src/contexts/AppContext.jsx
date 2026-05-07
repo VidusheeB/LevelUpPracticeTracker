@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { auth, db } from '../utils/supabase'
 import { registerPushToken } from '../utils/notifications'
+import { fetchGoogleCalendarEvents } from '../utils/googleAuth'
 
 const AppContext = createContext(null)
 
@@ -166,6 +167,29 @@ export function AppProvider({ children }) {
     return assignment
   }, [user])
 
+  const updateProfile = useCallback(async (updates) => {
+    try {
+      const updated = await db.updateProfile(user.id, updates)
+      setUser(prev => ({ ...prev, ...updated }))
+      return updated
+    } catch (error) {
+      setToastFn(error.message, 'error')
+      throw error
+    }
+  }, [user])
+
+  // accessToken=null means disconnect (clears events from DB)
+  const syncGoogleCalendar = useCallback(async (accessToken) => {
+    const events = accessToken ? await fetchGoogleCalendarEvents(accessToken) : null
+    const count = await db.syncGoogleCalendarEvents(user.id, events)
+    setUser(prev => ({
+      ...prev,
+      google_calendar_connected: accessToken !== null,
+      google_calendar_synced_at: accessToken ? new Date().toISOString() : null,
+    }))
+    return count
+  }, [user])
+
   const joinTeacher = useCallback(async (code) => {
     const teacher = await db.getTeacherByCode(code)
     if (!teacher) throw new Error('Teacher code not found. Double-check the code and try again.')
@@ -214,6 +238,7 @@ export function AppProvider({ children }) {
       user, stats, tasks, loading, toast,
       login, register, logout, loadUserData,
       refreshStats, refreshTasks,
+      updateProfile, syncGoogleCalendar,
       joinTeacher,
       createEnsemble, archiveEnsemble, deleteEnsemble,
       createChallenge, createAssignment,

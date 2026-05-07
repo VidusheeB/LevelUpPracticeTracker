@@ -212,14 +212,23 @@ export default function Dashboard() {
         <Text className="text-white font-semibold text-lg">Start Practice Session</Text>
       </TouchableOpacity>
 
-      {/* Weekly Reflection */}
-      <TouchableOpacity
-        onPress={() => navigation.navigate('DeepCheckIn')}
-        className="bg-purple-50 rounded-2xl py-4 items-center flex-row justify-center gap-2 border border-purple-100"
-      >
-        <Text className="text-lg">📓</Text>
-        <Text className="text-purple-700 font-semibold">Weekly Reflection</Text>
-      </TouchableOpacity>
+      {/* Quick actions row */}
+      <View className="flex-row gap-3">
+        <TouchableOpacity
+          onPress={() => navigation.navigate('DeepCheckIn')}
+          className="flex-1 bg-purple-50 rounded-2xl py-4 items-center gap-1 border border-purple-100"
+        >
+          <Text className="text-xl">🧘</Text>
+          <Text className="text-purple-700 font-semibold text-sm">Weekly Reflection</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notebook')}
+          className="flex-1 bg-amber-50 rounded-2xl py-4 items-center gap-1 border border-amber-100"
+        >
+          <Text className="text-xl">📓</Text>
+          <Text className="text-amber-700 font-semibold text-sm">My Notebook</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Mascot */}
       <View className="items-center py-4">
