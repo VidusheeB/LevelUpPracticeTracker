@@ -214,6 +214,16 @@ export default function Dashboard() {
       </TouchableOpacity>
 
       {/* Quick actions row */}
+      <TouchableOpacity
+        onPress={() => navigation.navigate('AIChat')}
+        className="bg-indigo-50 rounded-2xl py-4 items-center flex-row justify-center gap-2 border border-indigo-100"
+      >
+        <Text className="text-xl">🤖</Text>
+        <View>
+          <Text className="text-indigo-700 font-semibold text-sm">Ask Your Practice Coach</Text>
+          <Text className="text-indigo-400 text-xs">Powered by Claude · knows your history</Text>
+        </View>
+      </TouchableOpacity>
       <View className="flex-row gap-3">
         <TouchableOpacity
           onPress={() => navigation.navigate('DeepCheckIn')}

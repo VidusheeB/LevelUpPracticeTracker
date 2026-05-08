@@ -40,7 +40,7 @@
     CREATE INDEX IF NOT EXISTS notebook_entries_user_id_idx ON notebook_entries(user_id);
     CREATE INDEX IF NOT EXISTS notebook_entries_updated_at_idx ON notebook_entries(updated_at DESC);
     ```
-- [ ] **AI Chat screen** — freeform Claude chat with full app context loaded in (tasks, notes, mood, ensemble history)
+- [x] **AI Chat screen** — freeform Claude chat with full app context loaded in (tasks, mood logs, sessions, calendar, notebook)
 - [ ] **Server-side push notifications** — Expo Push Tokens + Supabase Edge Function `deliver-notifications` (currently local-only)
 
 ### Medium priority

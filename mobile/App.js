@@ -31,6 +31,7 @@ import PrivacyPolicy from './src/components/PrivacyPolicy'
 import DeepCheckIn from './src/components/DeepCheckIn'
 import Notebook from './src/components/Notebook'
 import NotebookEditor from './src/components/NotebookEditor'
+import AIChat from './src/components/AIChat'
 import Toast from './src/components/Toast'
 
 const Tab = createBottomTabNavigator()
@@ -179,6 +180,11 @@ function AppStack() {
       <Stack.Screen
         name="NotebookEditor"
         component={NotebookEditor}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="AIChat"
+        component={AIChat}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>
